@@ -12,8 +12,11 @@ Get data like this:
  The output looks like this:
  
 [['Location 1', battery-status, 'setpoint-temp', 'current-temp', {list of presets with temps}, [list of available weekschedules], active schedule, 'last active schedule'], 
+
 [['Location 2', battery-status, 'setpoint-temp', 'current-temp', {list of presets with temps}, [list of available weekschedules], active schedule, 'last active schedule'], 
-...
+
+...,
+
 ['Controlled Device', 'boiler-temp', boiler_state, central_heating_state, cooling_state, domestic_hot_water_state, water-pressure, outdoor-temp]]
 
 A `Location` represents an Anna, Lisa, Tom or Floor(?) thermostat. When a Lisa is found, the controlled Tom of Floor is ignored in the output.
