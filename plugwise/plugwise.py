@@ -44,6 +44,8 @@ class Plugwise:
         domain_objects = self.get_domain_objects()
         appl_dict = self.get_appliance_dictionary(appliances)
         outdoor_temp = self.get_outdoor_temperature(locations)
+        pressure = self.get_water_pressure(appliances)
+        print(pressure)
         dups = self.find_duplicate_location_ids(appliances)
 
         i = 0
@@ -87,6 +89,7 @@ class Plugwise:
                 thermostat_data.append(y[2])
                 thermostat_data.append(y[3])
                 thermostat_data.append(y[4])
+                thermostat_data.append(pressure)
                 thermostat_data.append(outdoor_temp)
             data.append(thermostat_data)
                 
@@ -328,42 +331,17 @@ class Plugwise:
                 value = '{:.1f}'.format(round(value, 1))
                 return value
 
-    def get_illuminance(self, root):
-        """Gets the illuminance value from the thermostat"""
-        point_log_id = self.get_point_log_id(
-            root, "illuminance"
-        )
-        if point_log_id:
-            measurement = self.get_measurement_from_point_log(
-                root, point_log_id
-            )
-            value = float(measurement)
-            value = '{:.1f}'.format(round(value, 1))
-            return value
-        return None
-
     def get_water_pressure(self, root):
-        """Gets the water pressure value from the thermostat"""
-        point_log_id = self.get_point_log_id(
-            root, "central_heater_water_pressure"
-        )
-        if point_log_id:
-            measurement = self.get_measurement_from_point_log(root, point_log_id)
-            value = float(measurement)
-            value = '{:.1f}'.format(round(value, 1))
-            return value
+        """Obtains the water pressure value from the thermostat"""
+        appliances = root.findall(".//appliance")
+        for appliance in appliances:
+            locator = (".//logs/point_log[type='central_heater_water_pressure']/period/measurement")
+            if appliance.find(locator) is not None:
+                measurement = appliance.find(locator).text
+                value = float(measurement)
+                value = '{:.1f}'.format(round(value, 1))
+                return value
         return None
-
-    @staticmethod
-    def get_point_log_id(root, log_type):
-        """Gets the point log ID based on log type"""
-        locator = (
-            "module/services/*[@log_type='"
-            + log_type
-            + "']/functionalities/point_log"
-        )
-        if root.find(locator):
-            return root.find(locator).attrib["id"]
 
     @staticmethod
     def get_measurement_from_point_log(root, point_log_id):
