@@ -80,7 +80,8 @@ class Plugwise:
                             thermostat_data.append(a_sch)
                             thermostat_data.append(s_sch)
                             thermostat_data.append(l_sch)
-                    i -= 1
+                    else:
+                        i -= 1
             else:
                 thermostat_data.append('Controlled Device')
                 thermostat_data.append(y[0])
@@ -96,67 +97,67 @@ class Plugwise:
 
     def get_appliances(self):
         """Collect the appliances XML-data."""
-        xml = requests.get(
-              self._endpoint + APPLIANCES,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the appliances.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'appliances.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + APPLIANCES,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the appliances.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'appliances.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
 
     def get_locations(self):
         """Collect the locations XML-data."""
-        xml = requests.get(
-              self._endpoint + LOCATIONS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the appliances.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'locations.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + LOCATIONS,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the appliances.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'locations.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
 
     def get_direct_objects(self):
         """Collect the direct_objects XML-data."""
-        xml = requests.get(
-              self._endpoint + DIRECT_OBJECTS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the direct objects.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'direct_objects.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + DIRECT_OBJECTS,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the direct objects.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'direct_objects.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
     
     def get_domain_objects(self):
         """Collect the domain_objects XML-data."""
-        xml = requests.get(
-              self._endpoint + DOMAIN_OBJECTS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the domain objects.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'domain_objects.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + DOMAIN_OBJECTS,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the domain objects.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'domain_objects.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
     
     @staticmethod
     def escape_illegal_xml_characters(root):
