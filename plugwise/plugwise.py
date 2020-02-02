@@ -45,7 +45,6 @@ class Plugwise:
         appl_dict = self.get_appliance_dictionary(appliances)
         outdoor_temp = self.get_outdoor_temperature(locations)
         pressure = self.get_water_pressure(appliances)
-        print(pressure)
         dups = self.find_duplicate_location_ids(appliances)
 
         i = 0
@@ -206,18 +205,6 @@ class Plugwise:
                         )
                 
         return appliance_dictionary
-
-    def get_domestic_hot_water_status(self, root):
-        """Gets the domestic hot water status"""
-        log_type = "domestic_hot_water_state"
-        locator = (
-            "appliance[type='heater_central']/logs/point_log[type='"
-            + log_type
-            + "']/period/measurement"
-        )
-        if root.find(locator) is not None:
-            return root.find(locator).text == "on"
-        #return None
 
     def find_duplicate_location_ids(self, root):
         """Obtains the existing appliance types and looks for duplicate location IDs."""
