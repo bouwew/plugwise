@@ -91,7 +91,8 @@ class Plugwise:
                 thermostat_data.append(y[4])
                 thermostat_data.append(pressure)
                 thermostat_data.append(outdoor_temp)
-            data.append(thermostat_data)
+            if thermostat_data != []:
+                data.append(thermostat_data)
                 
         return data
 
