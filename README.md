@@ -1,5 +1,6 @@
 # plugwise
-Python library for Plugwise supporting the Adam and Anna (firmware 3.x.y)
+Python library for Plugwise supporting the Adam and Anna (firmware 3.x.y).
+This library is based on the work of @laetificat and @CoMPaTech on the haanna-library.
 
 Get data like this:
 
