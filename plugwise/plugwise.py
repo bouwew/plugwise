@@ -38,6 +38,7 @@ class Plugwise:
         return True
 
     def get_plugwise_data(self):
+        """Make life easy for the programmer, get all the data via one function."""
         appliances = self.get_appliances()
         locations = self.get_locations()
         domain_objects = self.get_domain_objects()
@@ -80,11 +81,12 @@ class Plugwise:
                             thermostat_data.append(l_sch)
                     i -= 1
             else:
-                thermostat_data.append('Heating Device')
+                thermostat_data.append('Controlled Device')
                 thermostat_data.append(y[0])
                 thermostat_data.append(y[1])
                 thermostat_data.append(y[2])
                 thermostat_data.append(y[3])
+                thermostat_data.append(y[4])
                 thermostat_data.append(outdoor_temp)
             data.append(thermostat_data)
                 
@@ -92,67 +94,67 @@ class Plugwise:
 
     def get_appliances(self):
         """Collect the appliances XML-data."""
-#        xml = requests.get(
-#              self._endpoint + APPLIANCES,
-#              auth=(self._username, self._password),
-#              timeout=10,
-#        )
-#        if xml.status_code != requests.codes.ok:
-#            raise ConnectionError("Could not get the appliances.")
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-        xml_file = 'appliances.xml'
-        xml_file_handle = open(xml_file,'r')
-        xml_as_string = xml_file_handle.read()
-        xml_file_handle.close()
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+        xml = requests.get(
+              self._endpoint + APPLIANCES,
+              auth=(self._username, self._password),
+              timeout=10,
+        )
+        if xml.status_code != requests.codes.ok:
+            raise ConnectionError("Could not get the appliances.")
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+#        xml_file = 'appliances.xml'
+#        xml_file_handle = open(xml_file,'r')
+#        xml_as_string = xml_file_handle.read()
+#        xml_file_handle.close()
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
 
     def get_locations(self):
         """Collect the locations XML-data."""
-#        xml = requests.get(
-#              self._endpoint + LOCATIONS,
-#              auth=(self._username, self._password),
-#              timeout=10,
-#        )
-#        if xml.status_code != requests.codes.ok:
-#            raise ConnectionError("Could not get the appliances.")
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-        xml_file = 'locations.xml'
-        xml_file_handle = open(xml_file,'r')
-        xml_as_string = xml_file_handle.read()
-        xml_file_handle.close()
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+        xml = requests.get(
+              self._endpoint + LOCATIONS,
+              auth=(self._username, self._password),
+              timeout=10,
+        )
+        if xml.status_code != requests.codes.ok:
+            raise ConnectionError("Could not get the appliances.")
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+#        xml_file = 'locations.xml'
+#        xml_file_handle = open(xml_file,'r')
+#        xml_as_string = xml_file_handle.read()
+#        xml_file_handle.close()
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
 
     def get_direct_objects(self):
         """Collect the direct_objects XML-data."""
-#        xml = requests.get(
-#              self._endpoint + DIRECT_OBJECTS,
-#              auth=(self._username, self._password),
-#              timeout=10,
-#        )
-#        if xml.status_code != requests.codes.ok:
-#            raise ConnectionError("Could not get the direct objects.")
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-        xml_file = 'direct_objects.xml'
-        xml_file_handle = open(xml_file,'r')
-        xml_as_string = xml_file_handle.read()
-        xml_file_handle.close()
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+        xml = requests.get(
+              self._endpoint + DIRECT_OBJECTS,
+              auth=(self._username, self._password),
+              timeout=10,
+        )
+        if xml.status_code != requests.codes.ok:
+            raise ConnectionError("Could not get the direct objects.")
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+#        xml_file = 'direct_objects.xml'
+#        xml_file_handle = open(xml_file,'r')
+#        xml_as_string = xml_file_handle.read()
+#        xml_file_handle.close()
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
     
     def get_domain_objects(self):
         """Collect the domain_objects XML-data."""
-#        xml = requests.get(
-#              self._endpoint + DOMAIN_OBJECTS,
-#              auth=(self._username, self._password),
-#              timeout=10,
-#        )
-#        if xml.status_code != requests.codes.ok:
-#            raise ConnectionError("Could not get the domain objects.")
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-        xml_file = 'domain_objects.xml'
-        xml_file_handle = open(xml_file,'r')
-        xml_as_string = xml_file_handle.read()
-        xml_file_handle.close()
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+        xml = requests.get(
+              self._endpoint + DOMAIN_OBJECTS,
+              auth=(self._username, self._password),
+              timeout=10,
+        )
+        if xml.status_code != requests.codes.ok:
+            raise ConnectionError("Could not get the domain objects.")
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+#        xml_file = 'domain_objects.xml'
+#        xml_file_handle = open(xml_file,'r')
+#        xml_as_string = xml_file_handle.read()
+#        xml_file_handle.close()
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
     
     @staticmethod
     def escape_illegal_xml_characters(root):
@@ -190,9 +192,29 @@ class Plugwise:
                     cooling_state =  None
                     if appliance.find(locator) is not None:                      
                         cooling_state = (appliance.find(locator).text == "on")
-                    appliance_dictionary[appliance_id] = (boiler_temperature, boiler_state, central_heating_state, cooling_state)
+                    locator = (".//logs/point_log[type='domestic_hot_water_state']/period/measurement")
+                    domestic_hot_water_state =  None
+                    if appliance.find(locator) is not None:                      
+                        domestic_hot_water_state = (appliance.find(locator).text == "on")                    
+                    appliance_dictionary[appliance_id] = (
+                        boiler_temperature, boiler_state,
+                        central_heating_state, cooling_state,
+                        domestic_hot_water_state
+                        )
                 
         return appliance_dictionary
+
+    def get_domestic_hot_water_status(self, root):
+        """Gets the domestic hot water status"""
+        log_type = "domestic_hot_water_state"
+        locator = (
+            "appliance[type='heater_central']/logs/point_log[type='"
+            + log_type
+            + "']/period/measurement"
+        )
+        if root.find(locator) is not None:
+            return root.find(locator).text == "on"
+        #return None
 
     def find_duplicate_location_ids(self, root):
         """Obtains the existing appliance types and looks for duplicate location IDs."""
@@ -318,19 +340,19 @@ class Plugwise:
             value = float(measurement)
             value = '{:.1f}'.format(round(value, 1))
             return value
+        return None
 
-# Save for future use
-#    def get_water_pressure(self, root):
-#        """Gets the water pressure value from the thermostat"""
-#        point_log_id = self.get_point_log_id(
-#            root, "central_heater_water_pressure"
-#        )
-#        if point_log_id:
-#            measurement = self.get_measurement_from_point_log(root, point_log_id)
-#            value = float(measurement)
-#            value = '{:.1f}'.format(round(value, 1))
-#            return value
-#        return None
+    def get_water_pressure(self, root):
+        """Gets the water pressure value from the thermostat"""
+        point_log_id = self.get_point_log_id(
+            root, "central_heater_water_pressure"
+        )
+        if point_log_id:
+            measurement = self.get_measurement_from_point_log(root, point_log_id)
+            value = float(measurement)
+            value = '{:.1f}'.format(round(value, 1))
+            return value
+        return None
 
     @staticmethod
     def get_point_log_id(root, log_type):
@@ -385,19 +407,6 @@ class Plugwise:
             )
         if preset_dictionary != {}:
             return preset_dictionary
-
-# Save for future use
-#    def get_domestic_hot_water_status(self, root):
-#        """Gets the domestic hot water status"""
-#        log_type = "domestic_hot_water_state"
-#        locator = (
-#            "appliance[type='heater_central']/logs/point_log[type='"
-#            + log_type
-#            + "']/period/measurement"
-#        )
-#        if root.find(locator) is not None:
-#            return root.find(locator).text == "on"
-#        #return None
 
 ####################
 # Setting stuff... #
