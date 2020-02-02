@@ -15,6 +15,6 @@ setup(
     author_email='bouwe.s.westerdijk@gmail.com',
     license='MIT',
     packages=['plugwise'],
-    install_requires=['re','requests','datetime','pytz'],
+    install_requires=['requests','datetime','pytz'],
     zip_safe=False
 )
