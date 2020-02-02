@@ -18,9 +18,8 @@ RULES = "/core/rules"
 
 
 class Plugwise:
-    """Define the Pluswise onbject."""
+    """Define the Plugwise onbject."""
 
-    
     def __init__(self, username, password, host, port):
         """Constructor for this class"""
         self._username = username
@@ -37,70 +36,124 @@ class Plugwise:
         if xml.status_code != 404:
             raise ConnectionError("Could not connect to the gateway.")
         return True
-        
+
+    def get_plugwise_data(self):
+        appliances = self.get_appliances()
+        locations = self.get_locations()
+        domain_objects = self.get_domain_objects()
+        appl_dict = self.get_appliance_dictionary(appliances)
+        outdoor_temp = self.get_outdoor_temperature(locations)
+        dups = self.find_duplicate_location_ids(appliances)
+
+        i = 0
+        data = []
+        for x,y in appl_dict.items():
+            user_name = api.get_user_names_dictionary_from_id(locations, x)
+            thermostat_data = []
+            if user_name:
+                for key,val in user_name.items():
+                    if key in dups:
+                        i += 1
+                    if i != 2:
+                        real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
+                        for k,v in real_user_name.items():
+                            thermostat_data.append(k)
+                            thermostat_data.append(y[1])
+                            thermostat_data.append(v[1])
+                            thermostat_data.append(v[2])
+                            presets = api.get_presets_from_id(domain_objects, key)
+                            thermostat_data.append(presets)
+                            schemas = api.get_schema_names_from_id(domain_objects, key)
+                            a_sch = []
+                            l_sch = None
+                            s_sch = None
+                            if schemas:
+                                for a,b in schemas.items():
+                                    if a != "Last":
+                                        a_sch.append(a)
+                                    else:
+                                        l_sch = b
+                                    if b == True:
+                                        s_sch = a
+                            thermostat_data.append(a_sch)
+                            thermostat_data.append(s_sch)
+                            thermostat_data.append(l_sch)
+                    else:
+                        i -= 1
+            else:
+                thermostat_data.append('Heating Device')
+                thermostat_data.append(y[0])
+                thermostat_data.append(y[1])
+                thermostat_data.append(y[2])
+                thermostat_data.append(y[3])
+                thermostat_data.append(outdoor_temp)
+            data.append(thermostat_data)
+                
+        return data
+
     def get_appliances(self):
         """Collect the appliances XML-data."""
-        xml = requests.get(
-              self._endpoint + APPLIANCES,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the appliances.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'appliances.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + APPLIANCES,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the appliances.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'appliances.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
 
     def get_locations(self):
         """Collect the locations XML-data."""
-        xml = requests.get(
-              self._endpoint + LOCATIONS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the appliances.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'locations.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + LOCATIONS,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the appliances.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'locations.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
 
     def get_direct_objects(self):
         """Collect the direct_objects XML-data."""
-        xml = requests.get(
-              self._endpoint + DIRECT_OBJECTS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the direct objects.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'direct_objects.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + DIRECT_OBJECTS,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the direct objects.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'direct_objects.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
     
     def get_domain_objects(self):
         """Collect the domain_objects XML-data."""
-        xml = requests.get(
-              self._endpoint + DOMAIN_OBJECTS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the domain objects.")
-        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
-#        xml_file = 'domain_objects.xml'
-#        xml_file_handle = open(xml_file,'r')
-#        xml_as_string = xml_file_handle.read()
-#        xml_file_handle.close()
-#        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
+#        xml = requests.get(
+#              self._endpoint + DOMAIN_OBJECTS,
+#              auth=(self._username, self._password),
+#              timeout=10,
+#        )
+#        if xml.status_code != requests.codes.ok:
+#            raise ConnectionError("Could not get the domain objects.")
+#        return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        xml_file = 'domain_objects.xml'
+        xml_file_handle = open(xml_file,'r')
+        xml_as_string = xml_file_handle.read()
+        xml_file_handle.close()
+        return Etree.fromstring(self.escape_illegal_xml_characters(xml_as_string))
     
     @staticmethod
     def escape_illegal_xml_characters(root):
@@ -110,8 +163,7 @@ class Plugwise:
     def get_appliance_dictionary(self, root):
         """Obtains the existing appliance types and ids - from APPLIANCES."""
         appliance_dictionary = {}
-        appliances = root.findall(".//appliance")
-        for appliance in appliances:
+        for appliance in root:
             appliance_name = appliance.find("name").text
             if "Gateway" not in appliance_name:
                 appliance_id = appliance.attrib["id"]
@@ -145,6 +197,21 @@ class Plugwise:
         #    return None
         return appliance_dictionary
 
+    def find_duplicate_location_ids(self, root):
+        """Obtains the existing appliance types and looks for duplicate location IDs."""
+        appliance_dictionary = {}
+        appliances = root.findall(".//appliance")
+        ids = []
+        for appliance in appliances:
+            appliance_name = appliance.find("name").text
+            if "Gateway" not in appliance_name:
+                appl_loc_id = appliance.find('location')
+                if appl_loc_id is not None:
+                    loc_id = appl_loc_id.attrib["id"]
+                    ids.append(loc_id)
+        dups = [ids[i] for i in range(len(ids)) if not i == ids.index(ids[i])]
+        return dups
+
     def get_user_names_dictionary_from_id(self, root, id):
         """Obtains the system names from the appliance id - from LOCATIONS."""
         user_names_dictionary = {}
@@ -170,9 +237,9 @@ class Plugwise:
         setpoint = current_location.find(".//logs/point_log[type='thermostat']/period/measurement").text
         temperature = current_location.find(".//logs/point_log[type='temperature']/period/measurement").text
         real_data[location_name] = (preset, setpoint, temperature)
-                     
+                 
         #if real_data == {}:
-        #    return None
+        #return None
         return real_data
     
     def get_presets_from_id(self, root, id):
@@ -501,41 +568,4 @@ class CouldNotSetTemperatureException(PlugwiseException):
 
     pass
 
-#################
-# End of libary #
-#################
 
-api = Plugwise('smile', '********', '192.168.***.***', 80)
-appliances = api.get_appliances()
-locations = api.get_locations()
-domain_objects = api.get_domain_objects()
-
-appl_dict = api.get_appliance_dictionary(appliances)
-print(appl_dict)
-#Provides: [ID : (appliance-type, battery)] for thermostats and [ID : (boiler_temperature, boiler_state,
-#central_heating_state, cooling_state)} for the heating/cooling device.
-
-
-outdoor_temp = api.get_outdoor_temperature(locations)
-print("Outdoor temp:", outdoor_temp)
-
-
-for key,val in appl_dict.items():
-    #print(key,val)
-    #Repetition of appl_dict items but separated
-    user_name = api.get_user_names_dictionary_from_id(locations, key)
-    if user_name:
-        print(user_name)
-        #Provides: [ID : application-name]
-        for key,val in user_name.items():
-            real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
-            print("Location:", real_user_name)
-            #Provides: [application_name entered by User : (selected preset, setpoint temp, measure ambient temp)]
-            presets = api.get_presets_from_id(domain_objects, key)
-            print("Available presets:", presets)
-            #Provides: the availble presets  + setpoint temps
-            schemas = api.get_schema_names_from_id(domain_objects, key)
-            print("Available schema's:", schemas)
-            #Provides: {schema-name_1 : active-state, schema-name_2 : active_state, ...:..., 'Last : last-used-schema-name}
-
-    
