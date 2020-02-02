@@ -18,7 +18,7 @@ RULES = "/core/rules"
 
 
 class Plugwise:
-    """Define the Plugwise onbject."""
+    """Define the Plugwise object."""
 
     def __init__(self, username, password, host, port):
         """Constructor for this class"""
@@ -78,8 +78,7 @@ class Plugwise:
                             thermostat_data.append(a_sch)
                             thermostat_data.append(s_sch)
                             thermostat_data.append(l_sch)
-                    else:
-                        i -= 1
+                    i -= 1
             else:
                 thermostat_data.append('Heating Device')
                 thermostat_data.append(y[0])
@@ -193,8 +192,6 @@ class Plugwise:
                         cooling_state = (appliance.find(locator).text == "on")
                     appliance_dictionary[appliance_id] = (boiler_temperature, boiler_state, central_heating_state, cooling_state)
                 
-        #if appliance_dictionary == {}:
-        #    return None
         return appliance_dictionary
 
     def find_duplicate_location_ids(self, root):
@@ -223,9 +220,7 @@ class Plugwise:
                 appliance_id = appliance.attrib["id"]
                 if appliance_id == id:
                     user_names_dictionary[location_id] = location_name
-                     
-        #if user_names_dictionary == {}:
-        #    return None
+
         return user_names_dictionary
 
     def get_real_user_name_and_data_from_id(self, root, id):
@@ -237,9 +232,7 @@ class Plugwise:
         setpoint = current_location.find(".//logs/point_log[type='thermostat']/period/measurement").text
         temperature = current_location.find(".//logs/point_log[type='temperature']/period/measurement").text
         real_data[location_name] = (preset, setpoint, temperature)
-                 
-        #if real_data == {}:
-        #return None
+
         return real_data
     
     def get_presets_from_id(self, root, id):
@@ -312,7 +305,6 @@ class Plugwise:
                 value = float(measurement)
                 value = '{:.1f}'.format(round(value, 1))
                 return value
-        #return None
 
     def get_illuminance(self, root):
         """Gets the illuminance value from the thermostat"""
@@ -326,7 +318,6 @@ class Plugwise:
             value = float(measurement)
             value = '{:.1f}'.format(round(value, 1))
             return value
-        #return None
 
 # Save for future use
 #    def get_water_pressure(self, root):
@@ -351,7 +342,6 @@ class Plugwise:
         )
         if root.find(locator):
             return root.find(locator).attrib["id"]
-        #return None
 
     @staticmethod
     def get_measurement_from_point_log(root, point_log_id):
@@ -363,7 +353,6 @@ class Plugwise:
         )
         if root.find(locator):
             return root.find(locator).text
-        #return None
 
     def get_rule_id_and_zone_location_by_name(self, root, rule_name):
         """Gets the rule ID and location ID based on name"""
@@ -394,7 +383,8 @@ class Plugwise:
             ] = float(
                 directive.find("then").attrib["setpoint"]
             )
-        return preset_dictionary
+        if preset_dictionary != {}:
+            return preset_dictionary
 
 # Save for future use
 #    def get_domestic_hot_water_status(self, root):
@@ -567,5 +557,3 @@ class CouldNotSetTemperatureException(PlugwiseException):
     """Raise an exception for when the temperature could not be set"""
 
     pass
-
-
