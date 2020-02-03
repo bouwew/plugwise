@@ -54,8 +54,9 @@ class Plugwise:
             thermostat_data = []
             if user_name:
                 for key,val in user_name.items():
-                    if key in dups:
-                        i += 1
+                    if dups:
+                        if key in dups:
+                            i += 1
                     if i != 2:
                         real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
                         for k,v in real_user_name.items():
@@ -192,9 +193,9 @@ class Plugwise:
 
     def find_duplicate_location_ids(self, root):
         """Obtains the existing appliance types and looks for duplicate location IDs."""
-        appliance_dictionary = {}
         appliances = root.findall(".//appliance")
         ids = []
+        dups = []
         for appliance in appliances:
             appliance_name = appliance.find("name").text
             if "Gateway" not in appliance_name:
