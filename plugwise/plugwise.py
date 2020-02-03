@@ -36,6 +36,35 @@ class Plugwise:
         if xml.status_code != 404:
             raise ConnectionError("Could not connect to the gateway.")
         return True
+    
+    def get_thermostats(self):
+        appliances = self.get_appliances()
+        locations = self.get_locations()
+        domain_objects = self.get_domain_objects()
+        appl_dict = self.get_appliance_dictionary(appliances)
+        dups = self.find_duplicate_location_ids(appliances)
+        
+        i = 0
+        thermostats = []
+        for x,y in appl_dict.items():
+            user_name = api.get_user_names_dictionary_from_id(locations, x)
+            thermostat = None
+            if user_name:
+                for key,val in user_name.items():
+                    if dups:
+                        if key in dups:
+                            i += 1
+                    if i != 2:
+                        real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
+                        for k,v in real_user_name.items():
+                            thermostat = k
+                    else:
+                        i -= 1
+                        
+            if thermostat:
+                thermostats.append(thermostat)
+
+        return thermostats
 
     def get_plugwise_data(self):
         """Make life easy for the programmer, get all the data via one function."""
