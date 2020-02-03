@@ -161,9 +161,10 @@ class Plugwise:
                     appliance_dictionary[appliance_id] = (appliance_type, battery)
                 else:
                     locator = (".//logs/point_log[type='boiler_temperature']/period/measurement")
-                    measurement = appliance.find(locator).text
-                    value = float(measurement)
-                    boiler_temperature = '{:.1f}'.format(round(value, 1))
+                    if appliance.find(locator) is not None:
+                        measurement = appliance.find(locator).text
+                        value = float(measurement)
+                        boiler_temperature = '{:.1f}'.format(round(value, 1))
                     locator = (".//logs/point_log[type='boiler_state']/period/measurement")
                     boiler_state =  None
                     if appliance.find(locator) is not None:
