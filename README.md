@@ -4,7 +4,7 @@ This library is based on the work of @laetificat and @CoMPaTech on the haanna-li
 
 Get data like this:
 
- api = Plugwise('smile', 'abcdefgh', '192.168.xyz.yz', 80)
+ api = plugwise.Plugwise('smile', 'abcdefgh', '192.168.xyz.yz', 80)
  
  plugwise_data = api.get_plugwise_data()
  
