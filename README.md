@@ -21,4 +21,4 @@ A `Location` represents an Anna, Lisa, Tom or Floor(?) thermostat. When a Lisa i
 
 The `Controlled Device` represents the heating- or cooling-device that is controlled by the Adam or Smile.
 
-In general, when the vaue is `None` it means the corresponding parameter is not present in the XML-data. For the various `_state` parameters the value can be `True` or `False` when the parameter is found in the XML-data.
+In general, when the value is `None` it means the corresponding parameter is not present in the XML-data. For the various `_state` parameters the value can be `True` or `False` when the parameter is found in the XML-data.
