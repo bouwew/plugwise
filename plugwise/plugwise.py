@@ -37,7 +37,8 @@ class Plugwise:
             raise ConnectionError("Could not connect to the gateway.")
         return True
     
-    def get_thermostats(self):
+    def get_devices(self):
+        """Provide the devices-names and application IDs."""
         appliances = self.get_appliances()
         locations = self.get_locations()
         domain_objects = self.get_domain_objects()
@@ -45,10 +46,11 @@ class Plugwise:
         dups = self.find_duplicate_location_ids(appliances)
         
         i = 0
-        thermostats = []
-        for x,y in appl_dict.items():
-            user_name = api.get_user_names_dictionary_from_id(locations, x)
-            thermostat = None
+        keys = ['name','id']
+        devices = []
+        for id,type in appl_dict.items():
+            user_name = api.get_user_names_dictionary_from_id(locations, id)
+            device = []
             if user_name:
                 for key,val in user_name.items():
                     if dups:
@@ -56,18 +58,22 @@ class Plugwise:
                             i += 1
                     if i != 2:
                         real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
-                        for k,v in real_user_name.items():
-                            thermostat = k
+                        for user_name,data in real_user_name.items():
+                            device.append(user_name)
+                            device.append(id)
                     else:
                         i -= 1
-                        
-            if thermostat:
-                thermostats.append(thermostat)
+            else:
+                device.append('Controlled Device')
+                device.append(id)
+            if device != []:
+                devices.append(device)
 
-        return thermostats
-
-    def get_plugwise_data(self):
-        """Make life easy for the programmer, get all the data via one function."""
+        data = [{k:v for k,v in zip(keys, n)} for n in devices]
+        return data
+    
+    def get_device_data(self, id):
+        """Provide the device-data from the application ID."""
         appliances = self.get_appliances()
         locations = self.get_locations()
         domain_objects = self.get_domain_objects()
@@ -77,55 +83,51 @@ class Plugwise:
         dups = self.find_duplicate_location_ids(appliances)
 
         i = 0
-        data = []
-        for x,y in appl_dict.items():
-            user_name = api.get_user_names_dictionary_from_id(locations, x)
-            thermostat_data = []
-            if user_name:
-                for key,val in user_name.items():
-                    if dups:
-                        if key in dups:
-                            i += 1
-                    if i != 2:
-                        real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
-                        for k,v in real_user_name.items():
-                            thermostat_data.append(k)
-                            thermostat_data.append(y[1])
-                            thermostat_data.append(v[1])
-                            thermostat_data.append(v[2])
-                            presets = api.get_presets_from_id(domain_objects, key)
-                            thermostat_data.append(presets)
-                            schemas = api.get_schema_names_from_id(domain_objects, key)
-                            a_sch = []
-                            l_sch = None
-                            s_sch = None
-                            if schemas:
-                                for a,b in schemas.items():
-                                    if a != "Last":
-                                        a_sch.append(a)
-                                    else:
-                                        l_sch = b
-                                    if b == True:
-                                        s_sch = a
-                            thermostat_data.append(a_sch)
-                            thermostat_data.append(s_sch)
-                            thermostat_data.append(l_sch)
-                    else:
-                        i -= 1
-            else:
-                thermostat_data.append('Controlled Device')
-                thermostat_data.append(y[0])
-                thermostat_data.append(y[1])
-                thermostat_data.append(y[2])
-                thermostat_data.append(y[3])
-                thermostat_data.append(y[4])
-                thermostat_data.append(pressure)
-                thermostat_data.append(outdoor_temp)
-            if thermostat_data != []:
-                data.append(thermostat_data)
-                
-        return data
-
+        for appl_id,appl_type in appl_dict.items():
+            if appl_id == id:
+                user_name = api.get_user_names_dictionary_from_id(locations, appl_id)
+                data = {}
+                if user_name:
+                    for key,val in user_name.items():
+                        if dups:
+                            if key in dups:
+                                i += 1
+                        if i != 2:
+                            real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
+                            for k,v in real_user_name.items():
+                                data['batt status'] = appl_type[1]
+                                data['setpoint temp'] = v[1]
+                                data['current temp'] = v[2]
+                                presets = api.get_presets_from_id(domain_objects, key)
+                                data['presets'] = presets
+                                schemas = api.get_schema_names_from_id(domain_objects, key)
+                                a_sch = []
+                                l_sch = None
+                                s_sch = None
+                                if schemas:
+                                    for a,b in schemas.items():
+                                        if a != "Last":
+                                            a_sch.append(a)
+                                        else:
+                                            l_sch = b
+                                        if b == True:
+                                            s_sch = a
+                                data['available schedules'] = a_sch
+                                data['selected schedule'] = s_sch
+                                data['last used'] = l_sch
+                        else:
+                            i -= 1
+                else:
+                    data['water temp'] = appl_type[0]
+                    data['boiler state'] = appl_type[1]
+                    data['central heating state'] = appl_type[2]
+                    data['cooling state'] = appl_type[3]
+                    data['domestic hot water state']= appl_type[4]
+                    data['boiler pressure'] = pressure
+                    data['outdoor temp'] = outdoor_temp
+            
+                return data 
+    
     def get_appliances(self):
         """Collect the appliances XML-data."""
         xml = requests.get(
