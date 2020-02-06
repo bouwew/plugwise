@@ -96,6 +96,7 @@ class Plugwise:
                             real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
                             for k,v in real_user_name.items():
                                 data['batt status'] = appl_type[1]
+                                data['active preset'] = v[0]
                                 data['setpoint temp'] = v[1]
                                 data['current temp'] = v[2]
                                 presets = api.get_presets_from_id(domain_objects, key)
