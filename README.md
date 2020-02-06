@@ -25,8 +25,8 @@ for device in devices:
 The output looks like this:
 
 ```
-{'batt status': '0.84', 'setpoint temp': '20.00', 'current temp': '19.70', 'presets': {'home': 20.0, 'asleep': 17.0, 'away': 15.0, 'vacation': 15.0, 'no_frost': 10.0}, 'available schedules': ['Location_1'], 'selected schedule': 'Schedule', 'last used': 'Schedule'}
-{'batt status': '0.48', 'setpoint temp': '21.00', 'current temp': '20.93', 'presets': {'home': 20.0, 'asleep': 17.0, 'away': 15.0, 'vacation': 15.0, 'no_frost': 10.0}, 'available schedules': [], 'selected schedule': None, 'last used': None}
+{'batt status': '0.84', 'active preset': 'home', 'setpoint temp': '20.00', 'current temp': '19.70', 'presets': {'home': 20.0, 'asleep': 17.0, 'away': 15.0, 'vacation': 15.0, 'no_frost': 10.0}, 'available schedules': ['Schedule_1, Schedule_2'], 'selected schedule': 'Schedule_1', 'last used': 'Schedule_1'}
+{'batt status': '0.48', 'active preset': 'None', 'setpoint temp': '21.00', 'current temp': '20.93', 'presets': {'home': 20.0, 'asleep': 17.0, 'away': 15.0, 'vacation': 15.0, 'no_frost': 10.0}, 'available schedules': [], 'selected schedule': None, 'last used': None}
 ...
 {'water temp': '80.0', 'boiler state': None, 'central heating state': False, 'cooling state': None, 'domestic hot water state': None, 'boiler pressure': None, 'outdoor temp': '3.0'}
 ```
