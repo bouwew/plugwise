@@ -1,6 +1,4 @@
-"""
-Plugwise Home Assistant component
-"""
+"""Plugwise Home Assistant component."""
 import requests
 import datetime
 import pytz
@@ -49,7 +47,7 @@ class Plugwise:
         keys = ['name','id']
         devices = []
         for id,type in appl_dict.items():
-            user_name = api.get_user_names_dictionary_from_id(locations, id)
+            user_name = self.get_user_names_dictionary_from_id(locations, id)
             device = []
             if user_name:
                 for key,val in user_name.items():
@@ -57,7 +55,7 @@ class Plugwise:
                         if key in dups:
                             i += 1
                     if i != 2:
-                        real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
+                        real_user_name = self.get_real_user_name_and_data_from_id(domain_objects, key)
                         for user_name,data in real_user_name.items():
                             device.append(user_name)
                             device.append(id)
@@ -71,7 +69,7 @@ class Plugwise:
 
         data = [{k:v for k,v in zip(keys, n)} for n in devices]
         return data
-    
+
     def get_device_data(self, id):
         """Provide the device-data from the application ID."""
         appliances = self.get_appliances()
@@ -85,7 +83,7 @@ class Plugwise:
         i = 0
         for appl_id,appl_type in appl_dict.items():
             if appl_id == id:
-                user_name = api.get_user_names_dictionary_from_id(locations, appl_id)
+                user_name = self.get_user_names_dictionary_from_id(locations, appl_id)
                 data = {}
                 if user_name:
                     for key,val in user_name.items():
@@ -93,15 +91,16 @@ class Plugwise:
                             if key in dups:
                                 i += 1
                         if i != 2:
-                            real_user_name = api.get_real_user_name_and_data_from_id(domain_objects, key)
+                            real_user_name = self.get_real_user_name_and_data_from_id(domain_objects, key)
                             for k,v in real_user_name.items():
                                 data['batt status'] = appl_type[1]
                                 data['active preset'] = v[0]
                                 data['setpoint temp'] = v[1]
                                 data['current temp'] = v[2]
-                                presets = api.get_presets_from_id(domain_objects, key)
+                                presets = self.get_presets_from_id(domain_objects, key)
                                 data['presets'] = presets
-                                schemas = api.get_schema_names_from_id(domain_objects, key)
+                                schemas = self.get_schema_names_from_id(domain_objects, key)
+                                print(schemas)
                                 a_sch = []
                                 l_sch = None
                                 s_sch = None
