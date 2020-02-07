@@ -100,7 +100,6 @@ class Plugwise:
                                 presets = self.get_presets_from_id(domain_objects, key)
                                 data['presets'] = presets
                                 schemas = self.get_schema_names_from_id(domain_objects, key)
-                                print(schemas)
                                 a_sch = []
                                 l_sch = None
                                 s_sch = None
