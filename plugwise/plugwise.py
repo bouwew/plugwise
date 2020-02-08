@@ -257,8 +257,12 @@ class Plugwise:
         location_name = current_location.find("name").text
         preset = current_location.find("preset").text
         setpoint = current_location.find(".//logs/point_log[type='thermostat']/period/measurement").text
+        if setpoint:
+                setp_val = float(setpoint)        
         temperature = current_location.find(".//logs/point_log[type='temperature']/period/measurement").text
-        real_data[location_name] = (preset, setpoint, temperature)
+        if temperature:
+                temp_val = float(temperature)
+        real_data[location_name] = (preset, setp_val, temp_val)
 
         return real_data
     
