@@ -92,7 +92,7 @@ class Plugwise:
 
         return to_move_to_front
 
-    def get_device_data(self, id):
+    def get_device_data(self, id, ctrl_id):
         """Provide the device-data from the application ID."""
         appliances = self.get_appliances()
         locations = self.get_locations()
@@ -122,6 +122,7 @@ class Plugwise:
                                 presets = self.get_presets_from_id(domain_objects, key)
                                 data['presets'] = presets
                                 schemas = self.get_schema_names_from_id(domain_objects, key)
+                                print(schemas)
                                 a_sch = []
                                 l_sch = None
                                 s_sch = None
@@ -138,16 +139,13 @@ class Plugwise:
                                 data['last used'] = l_sch
                         else:
                             i -= 1
-                else:
-                    data['water temp'] = appl_type[0]
+            if appl_id == ctrl_id:
                     data['boiler state'] = appl_type[1]
                     data['central heating state'] = appl_type[2]
                     data['cooling state'] = appl_type[3]
                     data['domestic hot water state']= appl_type[4]
-                    data['boiler pressure'] = pressure
-                    data['outdoor temp'] = outdoor_temp
             
-                return data 
+        return data
     
     def get_appliances(self):
         """Collect the appliances XML-data."""
