@@ -68,7 +68,29 @@ class Plugwise:
                 devices.append(device)
 
         data = [{k:v for k,v in zip(keys, n)} for n in devices]
-        return data
+
+        for items in data:
+            if items['name'] == 'Controlled Device':
+                front_item = items
+
+        new_data = self.rearrange(data, front_item)
+        return new_data
+
+    @staticmethod
+    def rearrange(arg,item):
+        predefined_list = [item]
+        rest_list = []
+        to_move_to_front = []
+
+        for item in arg:
+            if item not in predefined_list:
+                rest_list.append(item)
+            else:
+                to_move_to_front.append(item)
+
+        to_move_to_front.extend(rest_list)
+
+        return to_move_to_front
 
     def get_device_data(self, id):
         """Provide the device-data from the application ID."""
