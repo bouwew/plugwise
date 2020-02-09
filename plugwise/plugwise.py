@@ -276,7 +276,7 @@ class Plugwise:
         """Obtains the name given by the user and the related data from the appliance id - from DOMAIN_OBJECTS."""
         real_data = {}
         current_location = root.find("location[@id='" + id + "']")
-        if current_location.find("name"):
+        if current_location.find("name") is not None:
             location_name = current_location.find("name").text
         preset = current_location.find("preset").text
         setpoint = current_location.find(".//logs/point_log[type='thermostat']/period/measurement").text
