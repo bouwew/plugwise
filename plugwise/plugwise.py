@@ -425,86 +425,79 @@ class Plugwise:
 # Setting stuff... #
 ####################
 
-    def set_schema_state(self, root, schema, state):
-        """Sends a set request to the schema with the given name"""
-        schema_rule_id = self.get_rule_id_by_name(
-            root, str(schema)
-        )
-        templates = root.findall(
-            ".//*[@id='{}']/template".format(schema_rule_id)
-        )
-        template_id = None
-        for rule in templates:
-            template_id = rule.attrib['id']
+    def set_schema_state(self, root, loc_id, schema, state):
+        """Sends a set request to the location-schema with the given name - domain_objects"""
+        schema_rule_ids = {}
+        schema_rule_ids = self.get_rule_id_and_zone_location_by_name(root, str(schema))
+        for schema_rule_id,location_id in schema_rule_ids.items():
+            if location_id == loc_id:
+                templates = root.findall(".//*[@id='{}']/template".format(schema_rule_id))
+                template_id = None
+                for rule in templates:
+                    template_id = rule.attrib['id']
 
-        uri = '{};id={}'.format(RULES, schema_rule_id)
+                uri = '{};id={}'.format(RULES, schema_rule_id)
 
-        state = str(state)
-        data = '<rules><rule id="{}"><name><![CDATA[{}]]></name>' \
-               '<template id="{}" /><active>{}</active></rule>' \
-               '</rules>'.format(schema_rule_id, schema, template_id, state)
+                state = str(state)
+                data = '<rules><rule id="{}"><name><![CDATA[{}]]></name>' \
+                       '<template id="{}" /><active>{}</active></rule>' \
+                       '</rules>'.format(schema_rule_id, schema, template_id, state)
 
-        xml = requests.put(
-              self._endpoint + uri,
-              auth=(self._username, self._password),
-              data=data,
-              headers={'Content-Type': 'text/xml'},
-              timeout=10
-        )
+                xml = requests.put(
+                      self._endpoint + uri,
+                      auth=(self._username, self._password),
+                      data=data,
+                      headers={'Content-Type': 'text/xml'},
+                      timeout=10
+                )
 
-        if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-            CouldNotSetTemperatureException("Could not set the schema to {}.".format(state) + xml.text)
-        return '{} {}'.format(xml.text, data)
+                if xml.status_code != requests.codes.ok: # pylint: disable=no-member
+                    CouldNotSetTemperatureException("Could not set the schema to {}.".format(state) + xml.text)
+                return '{} {}'.format(xml.text, data)
 
-    def set_preset(self, root, preset):
-        """Sets the given preset on the thermostat"""
-        locator = (
-            "appliance[type='thermostat']/location"
-        )
-        location_id = root.find(locator).attrib["id"]
-        locations_root = Etree.fromstring(
-            requests.get(
-                self._endpoint + LOCATIONS,
-                auth=(self._username, self._password),
-                timeout=10,
-            ).text
-        )
+    def set_preset(self, root, loc_id, preset):
+        """Sets the given location-preset on the thermostat - domain_objects"""
+        location_ids = []
+        locator = ("appliance[type='thermostat']/location")
+        location_ids = root.find(locator).attrib["id"]
+        for location_id in location_ids:
+            if location_id == loc_id:
+                locations_root = self.get_locations()
+                current_location = locations_root.find("location[@id='" + location_id + "']")
+                location_name = current_location.find("name").text
+                location_type = current_location.find("type").text
 
-        current_location = locations_root.find("location[@id='" + location_id + "']")
-        location_name = current_location.find("name").text
-        location_type = current_location.find("type").text
+                xml = requests.put(
+                        self._endpoint
+                        + LOCATIONS
+                        + ";id="
+                        + location_id,
+                        auth=(self._username, self._password),
+                        data="<locations>"
+                        + '<location id="'
+                        + location_id
+                        + '">'
+                        + "<name>"
+                        + location_name
+                        + "</name>"
+                        + "<type>"
+                        + location_type
+                        + "</type>"
+                        + "<preset>"
+                        + preset
+                        + "</preset>"
+                        + "</location>"
+                        + "</locations>",
+                        headers={"Content-Type": "text/xml"},
+                        timeout=10,
+                    )
+                if xml.status_code != requests.codes.ok: # pylint: disable=no-member
+                    raise CouldNotSetPresetException("Could not set the given preset: " + xml.text)
+                return xml.text
 
-        xml = requests.put(
-                self._endpoint
-                + LOCATIONS
-                + ";id="
-                + location_id,
-                auth=(self._username, self._password),
-                data="<locations>"
-                + '<location id="'
-                + location_id
-                + '">'
-                + "<name>"
-                + location_name
-                + "</name>"
-                + "<type>"
-                + location_type
-                + "</type>"
-                + "<preset>"
-                + preset
-                + "</preset>"
-                + "</location>"
-                + "</locations>",
-                headers={"Content-Type": "text/xml"},
-                timeout=10,
-            )
-        if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-            raise CouldNotSetPresetException("Could not set the given preset: " + xml.text)
-        return xml.text
-
-    def set_temperature(self, root, temperature):
-        """Sends a set request to the temperature with the given temperature"""
-        uri = self.__get_temperature_uri(root)
+    def set_temperature(self, root, loc_id, temperature):
+        """Sends a set request to the thermostat with the given temperature - domain_objects."""
+        uri = self.__get_temperature_uri(root, loc_id)
 
         temperature = str(temperature)
 
@@ -522,32 +515,27 @@ class Plugwise:
             CouldNotSetTemperatureException("Could not set the temperature." + xml.text)
         return xml.text
 
-    @staticmethod
-    def get_rule_id_by_name(root, rule_name):
-        """Gets the rule ID based on name"""
-        rules = root.findall("rule")
-        for rule in rules:
-            if rule.find("name").text == rule_name:
-                return rule.attrib['id']
-
-    def __get_temperature_uri(self, root):
-        """Determine the set_temperature uri for different versions of Anna"""
+    def __get_temperature_uri(self, loc_id, root):
+        """Determine the location-set_temperature uri - domain_objects."""
+        location_ids = []
         locator = ("appliance[type='thermostat']/location")
-        location_id = root.find(locator).attrib["id"]
-        locator = (
-            "location[@id='"
-            + location_id
-            + "']/actuator_functionalities/thermostat_functionality"
-        )
-        thermostat_functionality_id = root.find(locator).attrib["id"]
-        temperature_uri = (
-            LOCATIONS
-            + ";id="
-            + location_id
-            + "/thermostat;id="
-            + thermostat_functionality_id
-        )
-        return temperature_uri
+        location_ids = root.find(locator).attrib["id"]
+        for location_id in location_ids:
+            if location_id == loc_id:
+                locator = (
+                    "location[@id='"
+                    + location_id
+                    + "']/actuator_functionalities/thermostat_functionality"
+                )
+                thermostat_functionality_id = root.find(locator).attrib["id"]
+                temperature_uri = (
+                    LOCATIONS
+                    + ";id="
+                    + location_id
+                    + "/thermostat;id="
+                    + thermostat_functionality_id
+                )
+                return temperature_uri
 
 
 class PlugwiseException(Exception):
