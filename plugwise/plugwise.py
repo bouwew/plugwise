@@ -412,11 +412,12 @@ class Plugwise:
             "rule[@id='" + rule_id + "']/directives"
         )
         for directive in directives:
-            preset_dictionary[
-                directive.attrib["preset"]
-            ] = float(
-                directive.find("then").attrib["setpoint"]
-            )
+            preset = directive.find("then").attrib
+            keys, values = zip(*preset.items())
+            if str(keys[0]) == 'setpoint':
+                preset_dictionary[directive.attrib["preset"]] = float(preset["setpoint"])
+            else:
+                preset_dictionary[directive.attrib["preset"]] = float(preset["heating_setpoint"])                
         if preset_dictionary != {}:
             return preset_dictionary
 
