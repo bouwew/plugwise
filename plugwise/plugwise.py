@@ -341,7 +341,8 @@ class Plugwise:
             if (rule.find("template").attrib["tag"] == rule_name):
                 rule_id = rule.attrib["id"]
                 for elem in rule.iter("location"):
-                    location_id = elem.attrib["id"]
+                    if elem.attrib:
+                        location_id = elem.attrib["id"]
                 schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
@@ -388,7 +389,8 @@ class Plugwise:
             if rule.find("name").text == rule_name:
                 rule_id = rule.attrib["id"]
                 for elem in rule.iter("location"):
-                    location_id = elem.attrib["id"]
+                    if elem.attrib:
+                        location_id = elem.attrib["id"]
                 schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
