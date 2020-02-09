@@ -107,7 +107,7 @@ class Plugwise:
         for appl_id,appl_type in appl_dict.items():
             if appl_id == id:
                 user_name = self.get_user_names_dictionary_from_id(locations, appl_id)
-                 if user_name:
+                if user_name:
                     for key,val in user_name.items():
                         if dups:
                             if key in dups:
