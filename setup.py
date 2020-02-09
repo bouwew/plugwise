@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name='plugwise',
-    version='0.0.12',
+    version='0.0.13',
     description='Plugwise API to use in conjunction with Home Assistant.',
     long_description='Plugwise API supporting Adam and Anna/Smile (firmware 3.x and up) to use in conjunction with Home Assistant, but it can also be used without Home Assistant.',
     keywords='Home Assistant HA Adam Anna Smile Lisa Tom Floor Plugwise',
