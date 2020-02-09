@@ -103,11 +103,11 @@ class Plugwise:
         dups = self.find_duplicate_location_ids(appliances)
 
         i = 0
+        data = {}
         for appl_id,appl_type in appl_dict.items():
             if appl_id == id:
                 user_name = self.get_user_names_dictionary_from_id(locations, appl_id)
-                data = {}
-                if user_name:
+                 if user_name:
                     for key,val in user_name.items():
                         if dups:
                             if key in dups:
@@ -140,10 +140,10 @@ class Plugwise:
                         else:
                             i -= 1
             if appl_id == ctrl_id:
-                    data['boiler state'] = appl_type[1]
-                    data['central heating state'] = appl_type[2]
-                    data['cooling state'] = appl_type[3]
-                    data['domestic hot water state']= appl_type[4]
+                data['boiler state'] = appl_type[1]
+                data['central heating state'] = appl_type[2]
+                data['cooling state'] = appl_type[3]
+                data['domestic hot water state']= appl_type[4]
             
         return data
     
