@@ -339,15 +339,16 @@ class Plugwise:
     def get_rule_id_and_zone_location_by_template_tag(root, rule_name):
         """Gets the rule ID based on template_tag"""
         schema_ids = {}
+        location_id = None
         rules = root.findall("rule")
         for rule in rules:
             if (rule.find("template").attrib["tag"] == rule_name):
                 rule_id = rule.attrib["id"]
                 for elem in rule.iter("location"):
-                    if elem.attrib is not None:
-                        location_id = elem.attrib["id"]
+                    location_id = elem.attrib["id"]
                 schema_ids[rule_id] = location_id
         if schema_ids != {}:
+            print("schema_ids:", schema_ids)
             return schema_ids
 
     def get_outdoor_temperature(self, root):
@@ -387,13 +388,13 @@ class Plugwise:
     def get_rule_id_and_zone_location_by_name(self, root, rule_name):
         """Gets the rule ID and location ID based on name"""
         schema_ids = {}
+        loation = None
         rules = root.findall("rule")
         for rule in rules:
             if rule.find("name").text == rule_name:
                 rule_id = rule.attrib["id"]
                 for elem in rule.iter("location"):
-                    if elem.attrib is not None:
-                        location_id = elem.attrib["id"]
+                    location_id = elem.attrib["id"]
                 schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
