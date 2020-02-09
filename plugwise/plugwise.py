@@ -296,11 +296,11 @@ class Plugwise:
             root,
             "zone_setpoint_and_state_based_on_preset",
         )
-        if rule_ids == {}:
+        if rule_ids is None:
             rule_ids = self.get_rule_id_and_zone_location_by_name(
                 root, "Thermostat presets"
             )
-            if rule_ids == {}:
+            if rule_ids is None:
                 raise RuleIdNotFoundException("Could not find the rule ids.")
 
         for key,val in rule_ids.items():
