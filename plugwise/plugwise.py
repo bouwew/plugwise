@@ -56,9 +56,10 @@ class Plugwise:
                             i += 1
                     if i != 2:
                         real_user_name = self.get_real_user_name_and_data_from_id(domain_objects, key)
-                        for user_name,data in real_user_name.items():
-                            device.append(user_name)
-                            device.append(id)
+                        if real_user_name:
+                            for user_name,data in real_user_name.items():
+                                device.append(user_name)
+                                device.append(id)
                     else:
                         i -= 1
             else:
@@ -114,29 +115,29 @@ class Plugwise:
                                 i += 1
                         if i != 2:
                             real_user_name = self.get_real_user_name_and_data_from_id(domain_objects, key)
-                            for k,v in real_user_name.items():
-                                data['batt status'] = appl_type[1]
-                                data['active preset'] = v[0]
-                                data['setpoint temp'] = v[1]
-                                data['current temp'] = v[2]
-                                presets = self.get_presets_from_id(domain_objects, key)
-                                data['presets'] = presets
-                                schemas = self.get_schema_names_from_id(domain_objects, key)
-                                print(schemas)
-                                a_sch = []
-                                l_sch = None
-                                s_sch = None
-                                if schemas:
-                                    for a,b in schemas.items():
-                                        if a != "Last":
-                                            a_sch.append(a)
-                                        else:
-                                            l_sch = b
-                                        if b == True:
-                                            s_sch = a
-                                data['available schedules'] = a_sch
-                                data['selected schedule'] = s_sch
-                                data['last used'] = l_sch
+                            if real_user_name:
+                                for k,v in real_user_name.items():
+                                    data['batt status'] = appl_type[1]
+                                    data['active preset'] = v[0]
+                                    data['setpoint temp'] = v[1]
+                                    data['current temp'] = v[2]
+                                    presets = self.get_presets_from_id(domain_objects, key)
+                                    data['presets'] = presets
+                                    schemas = self.get_schema_names_from_id(domain_objects, key)
+                                    a_sch = []
+                                    l_sch = None
+                                    s_sch = None
+                                    if schemas:
+                                        for a,b in schemas.items():
+                                            if a != "Last":
+                                                a_sch.append(a)
+                                            else:
+                                                l_sch = b
+                                            if b == True:
+                                                s_sch = a
+                                    data['available schedules'] = a_sch
+                                    data['selected schedule'] = s_sch
+                                    data['last used'] = l_sch
                         else:
                             i -= 1
             if appl_id == ctrl_id:
@@ -264,7 +265,8 @@ class Plugwise:
             location_name = location.find("name").text
             location_id = location.attrib["id"]
             for appliance in location.iter('appliance'):
-                appliance_id = appliance.attrib["id"]
+                if appliance.attrib is not None:
+                    appliance_id = appliance.attrib["id"]
                 if appliance_id == id:
                     user_names_dictionary[location_id] = location_name
 
@@ -274,7 +276,8 @@ class Plugwise:
         """Obtains the name given by the user and the related data from the appliance id - from DOMAIN_OBJECTS."""
         real_data = {}
         current_location = root.find("location[@id='" + id + "']")
-        location_name = current_location.find("name").text
+        if current_location.find("name"):
+            location_name = current_location.find("name").text
         preset = current_location.find("preset").text
         setpoint = current_location.find(".//logs/point_log[type='thermostat']/period/measurement").text
         if setpoint:
