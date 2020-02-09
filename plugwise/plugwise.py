@@ -350,7 +350,6 @@ class Plugwise:
                         location_id = elem.attrib["id"]
                         schema_ids[rule_id] = location_id
         if schema_ids != {}:
-            print("schema_ids:", schema_ids)
             return schema_ids
 
     def get_outdoor_temperature(self, root):
