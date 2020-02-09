@@ -317,21 +317,22 @@ class Plugwise:
         schema_names = self.get_rule_id_and_zone_location_by_template_tag(root, locator)
         schemas = {}
         l_schemas = {}
-        for key,val in schema_names.items():
-            if val == id:
-                name = root.find("rule[@id='" + key + "']/name").text
-                active = False
-                if root.find("rule[@id='" + key + "']/active").text == 'true':
-                    active = True
-                schemas[name] = active
-                date = root.find("rule[@id='" + key + "']/modified_date").text
-                # Python 3.6 fix (%z %Z issue)
-                corrected = re.sub(r"([-+]\d{2}):(\d{2})(?:(\d{2}))?$", r"\1\2\3", date)
-                time = datetime.datetime.strptime(corrected, date_format)
-                l_schemas[name] = (time - epoch).total_seconds()
-        if l_schemas:
-            last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
-            schemas['Last'] = last_modified
+        if schema_names:
+            for key,val in schema_names.items():
+                if val == id:
+                    name = root.find("rule[@id='" + key + "']/name").text
+                    active = False
+                    if root.find("rule[@id='" + key + "']/active").text == 'true':
+                        active = True
+                    schemas[name] = active
+                    date = root.find("rule[@id='" + key + "']/modified_date").text
+                    # Python 3.6 fix (%z %Z issue)
+                    corrected = re.sub(r"([-+]\d{2}):(\d{2})(?:(\d{2}))?$", r"\1\2\3", date)
+                    time = datetime.datetime.strptime(corrected, date_format)
+                    l_schemas[name] = (time - epoch).total_seconds()
+            if l_schemas:
+                last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
+                schemas['Last'] = last_modified
         if schemas != {}:
             return schemas
 
