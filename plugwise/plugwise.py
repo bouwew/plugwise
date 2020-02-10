@@ -295,7 +295,7 @@ class Plugwise:
         rule_ids = self.get_rule_id_and_zone_location_by_template_tag(
             root,
             "zone_setpoint_and_state_based_on_preset",
-        )[0]
+        )
         
         if rule_ids is None:
             rule_ids = self.get_rule_id_and_zone_location_by_name(
@@ -341,13 +341,14 @@ class Plugwise:
     def get_rule_id_and_zone_location_by_template_tag(root, rule_name):
         """Gets the rule ID based on template_tag"""
         schema_ids = {}
-        location_id = None
+        name = None
         rules = root.findall("rule")
         for rule in rules:
-            if (rule.find("template").attrib["tag"] == rule_name):
-                rule_id = rule.attrib["id"]
-                for elem in rule.iter("location"):
-                    if elem.attrib is not None:
+            name = rule.find("template").attrib["tag"]
+            if name:
+                if (name == rule_name):
+                    rule_id = rule.attrib["id"]
+                    for elem in rule.iter("location"):
                         location_id = elem.attrib["id"]
                         schema_ids[rule_id] = location_id
         if schema_ids != {}:
