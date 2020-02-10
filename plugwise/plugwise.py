@@ -349,13 +349,15 @@ class Plugwise:
         schema_ids = {}
         rules = root.findall("rule")
         for rule in rules:
-            if rule.find("template"):
-                name = rule.find("template").attrib["tag"]
-                if (name == rule_name):
-                    rule_id = rule.attrib["id"]
-                    for elem in rule.iter("location"):
-                        location_id = elem.attrib["id"]
-                        schema_ids[rule_id] = location_id
+            try:
+                name = rule.find("template").attrib["id"]
+            except KeyError:
+                name = None
+            if (name == rule_name):
+                rule_id = rule.attrib["id"]
+                for elem in rule.iter("location"):
+                    location_id = elem.attrib["id"]
+                    schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
 
@@ -398,14 +400,16 @@ class Plugwise:
         schema_ids = {}
         rules = root.findall("rule")
         for rule in rules:
-            if rule.find("name"):
+            try:
                 name = rule.find("name").text
-                if (name == rule_name):
-                    rule_id = rule.attrib["id"]
-                    for elem in rule.iter("location"):
-                        if elem.attrib is not None:
-                            location_id = elem.attrib["id"]
-                            schema_ids[rule_id] = location_id
+            except AttributeError:
+                name = None
+            if (name == rule_name):
+                rule_id = rule.attrib["id"]
+                for elem in rule.iter("location"):
+                    if elem.attrib is not None:
+                        location_id = elem.attrib["id"]
+                        schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
 
