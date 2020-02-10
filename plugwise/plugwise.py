@@ -399,13 +399,13 @@ class Plugwise:
         rules = root.findall("rule")
         for rule in rules:
             if rule.find("name"):
-            name = rule.find("name").text
-            if (name == rule_name):
-                rule_id = rule.attrib["id"]
-                for elem in rule.iter("location"):
-                    if elem.attrib is not None:
-                        location_id = elem.attrib["id"]
-                        schema_ids[rule_id] = location_id
+                name = rule.find("name").text
+                if (name == rule_name):
+                    rule_id = rule.attrib["id"]
+                    for elem in rule.iter("location"):
+                        if elem.attrib is not None:
+                            location_id = elem.attrib["id"]
+                            schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
 
