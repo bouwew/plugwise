@@ -347,11 +347,10 @@ class Plugwise:
     def get_rule_id_and_zone_location_by_template_tag(root, rule_name):
         """Gets the rule ID based on template_tag"""
         schema_ids = {}
-        name = None
         rules = root.findall("rule")
         for rule in rules:
-            name = rule.find("template").attrib["tag"]
-            if name:
+            if rule.find("template"):
+                name = rule.find("template").attrib["tag"]
                 if (name == rule_name):
                     rule_id = rule.attrib["id"]
                     for elem in rule.iter("location"):
@@ -397,17 +396,16 @@ class Plugwise:
     def get_rule_id_and_zone_location_by_name(self, root, rule_name):
         """Gets the rule ID and location ID based on name"""
         schema_ids = {}
-        name = None
         rules = root.findall("rule")
         for rule in rules:
+            if rule.find("name"):
             name = rule.find("name").text
-            if name:
-                if (name == rule_name):
-                    rule_id = rule.attrib["id"]
-                    for elem in rule.iter("location"):
-                        if elem.attrib is not None:
-                            location_id = elem.attrib["id"]
-                            schema_ids[rule_id] = location_id
+            if (name == rule_name):
+                rule_id = rule.attrib["id"]
+                for elem in rule.iter("location"):
+                    if elem.attrib is not None:
+                        location_id = elem.attrib["id"]
+                        schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
 
