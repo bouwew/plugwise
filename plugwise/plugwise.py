@@ -275,16 +275,22 @@ class Plugwise:
     def get_real_user_name_and_data_from_id(self, root, id):
         """Obtains the name given by the user and the related data from the appliance id - from DOMAIN_OBJECTS."""
         real_data = {}
+        therm_loc = None
+        temp_loc =  None
+        setp_val =  None
+        temp_val =  None
         current_location = root.find("location[@id='" + id + "']")
         if current_location.find("name") is not None:
             location_name = current_location.find("name").text
         preset = current_location.find("preset").text
-        setpoint = current_location.find(".//logs/point_log[type='thermostat']/period/measurement").text
-        if setpoint:
-                setp_val = float(setpoint)        
-        temperature = current_location.find(".//logs/point_log[type='temperature']/period/measurement").text
-        if temperature:
-                temp_val = float(temperature)
+        therm_loc = (".//logs/point_log[type='thermostat']/period/measurement")
+        if current_location.find(therm_loc) is not None:
+            setpoint = current_location.find(therm_loc).text
+            setp_val = float(setpoint)
+        temp_loc = (".//logs/point_log[type='temperature']/period/measurement")
+        if current_location.find(therm_loc) is not None:
+            temperature = current_location.find(temp_loc).text
+            temp_val = float(temperature)
         real_data[location_name] = (preset, setp_val, temp_val)
 
         return real_data
