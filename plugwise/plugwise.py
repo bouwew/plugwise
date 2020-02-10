@@ -295,7 +295,8 @@ class Plugwise:
         rule_ids = self.get_rule_id_and_zone_location_by_template_tag(
             root,
             "zone_setpoint_and_state_based_on_preset",
-        )
+        )[0]
+        
         if rule_ids is None:
             rule_ids = self.get_rule_id_and_zone_location_by_name(
                 root, "Thermostat presets"
