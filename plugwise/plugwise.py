@@ -397,15 +397,17 @@ class Plugwise:
     def get_rule_id_and_zone_location_by_name(self, root, rule_name):
         """Gets the rule ID and location ID based on name"""
         schema_ids = {}
-        loation = None
+        name = None
         rules = root.findall("rule")
         for rule in rules:
-            if rule.find("name").text == rule_name:
-                rule_id = rule.attrib["id"]
-                for elem in rule.iter("location"):
-                    if elem.attrib is not None:
-                        location_id = elem.attrib["id"]
-                        schema_ids[rule_id] = location_id
+            name = rule.find("name").text
+            if name:
+                if (name == rule_name):
+                    rule_id = rule.attrib["id"]
+                    for elem in rule.iter("location"):
+                        if elem.attrib is not None:
+                            location_id = elem.attrib["id"]
+                            schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
 
