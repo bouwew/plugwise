@@ -38,7 +38,7 @@ class Plugwise:
         return True
     
     def get_devices(self):
-        """Provides the devices-names and application or location IDs."""
+        """Provides the devices-names and application- or location-ids."""
         appliances = self.get_appliances()
         locations = self.get_locations()
         appl_dict = self.get_appliance_dictionary(appliances)
@@ -52,7 +52,7 @@ class Plugwise:
                # ('zone_thermostat' not in type)
                #   and ('thermostatic_radiator_valve' not in type)
                #   and ('gateway' not in type)
-               #   and ('thermostat' not in type)): # Look for heater_central instead?
+               #   and ('thermostat' not in type)):
                 thermostat.append('Controlled Device')
                 thermostat.append(appl_id)
                 if thermostat != []:
@@ -69,7 +69,7 @@ class Plugwise:
         return data
                     
     def get_device_data(self, id):
-        """Provides the device-data, based on location ID,from APPLIANCES."""
+        """Provides the device-data, based on location_id, from APPLIANCES."""
         appliances = self.get_appliances()
         domain_objects = self.get_domain_objects()
         #outdoor_temp = self.get_outdoor_temperature(locations)
@@ -103,7 +103,7 @@ class Plugwise:
             return(device_data)
     
     def get_appliances(self):
-        """Collect the appliances XML-data."""
+        """Collects the appliances XML-data."""
         xml = requests.get(
               self._endpoint + APPLIANCES,
               auth=(self._username, self._password),
@@ -114,7 +114,7 @@ class Plugwise:
         return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
 
     def get_locations(self):
-        """Collect the locations XML-data."""
+        """Collects the locations XML-data."""
         xml = requests.get(
               self._endpoint + LOCATIONS,
               auth=(self._username, self._password),
@@ -125,7 +125,7 @@ class Plugwise:
         return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
 
     def get_direct_objects(self):
-        """Collect the direct_objects XML-data."""
+        """Collects the direct_objects XML-data."""
         xml = requests.get(
               self._endpoint + DIRECT_OBJECTS,
               auth=(self._username, self._password),
@@ -136,7 +136,7 @@ class Plugwise:
         return Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
     
     def get_domain_objects(self):
-        """Collect the domain_objects XML-data."""
+        """Collects the domain_objects XML-data."""
         xml = requests.get(
               self._endpoint + DOMAIN_OBJECTS,
               auth=(self._username, self._password),
@@ -148,11 +148,11 @@ class Plugwise:
     
     @staticmethod
     def escape_illegal_xml_characters(root):
-        """Replace illegal &-character."""
+        """Replaces illegal &-characters."""
         return re.sub(r'&([^a-zA-Z#])',r'&amp;\1',root)
     
     def get_location_dictionary(self,root):
-        """Obtains the existing locations and connected applicance ids - from LOCATIONS."""
+        """Obtains the existing locations and connected applicance_id's - from LOCATIONS."""
         location_dictionary = {}
         for location in root:
             location_name = location.find('name').text
@@ -176,7 +176,7 @@ class Plugwise:
         return location_dictionary
 
     def get_thermostat_from_id(self, root, id):
-        """Obtains the main thermostat connected to the location id - from APPLIANCES."""
+        """Obtains the main thermostat connected to the location_id - from APPLIANCES."""
         device_list = []
         temp_list = []
         appliances = root.findall('.//appliance')
@@ -323,7 +323,7 @@ class Plugwise:
         return appliance_dictionary
 
     def get_preset_from_id(self, root, id):
-        """Obtains the active preset from the location id - from DOMAIN_OBJECTS."""
+        """Obtains the active preset based on the location_id - from DOMAIN_OBJECTS."""
         for location in root:
             location_id = location.attrib['id']
             if location.find('preset') is not None:
@@ -332,7 +332,7 @@ class Plugwise:
                     return preset
     
     def get_presets_from_id(self, root, id):
-        """Gets the presets from the thermostat based on location_id"""
+        """Gets the presets from the thermostat based on location_id."""
         rule_ids = {}
         rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(
             root,
@@ -351,7 +351,7 @@ class Plugwise:
         return presets
 
     def get_schema_names_from_id(self, root, id):
-        """Obtain the available schemas or schedules for a location ID."""
+        """Obtains the available schemas or schedules based on the location_id."""
         epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
         date_format = "%Y-%m-%dT%H:%M:%S.%f%z"
         schema_names = {}
@@ -380,7 +380,7 @@ class Plugwise:
 
     @staticmethod
     def get_rule_id_and_zone_location_by_template_tag_with_id(root, rule_name, id):
-        """Gets the rule ID based on template_tag and location id."""
+        """Obtains the rule_id based on the given template_tag and location_id."""
         schema_ids = {}
         rules = root.findall('.//rule')
         for rule in rules:
@@ -399,7 +399,7 @@ class Plugwise:
             return schema_ids
 
     def get_rule_id_and_zone_location_by_name_with_id(self, root, rule_name, id):
-        """Gets the rule ID and location ID based on name and location id."""
+        """Obtains the rule_id and location_id based on the given name and location_id."""
         schema_ids = {}
         rules = root.findall('.//rule')
         for rule in rules:
@@ -441,10 +441,7 @@ class Plugwise:
 
     @staticmethod
     def get_preset_dictionary(root, rule_id):
-        """
-        Gets the presets from a rule based on rule ID and returns a dictionary
-        with all the key-value pairs
-        """
+        """Obtains the presets from a rule based on rule_id."""
         preset_dictionary = {}
         directives = root.find(
             "rule[@id='" + rule_id + "']/directives"
@@ -463,10 +460,10 @@ class Plugwise:
 # Setting stuff... #
 ####################
 
-    def set_schema_state(self, root, loc_id, schema, state):
-        """Sets the schedule, with name "schema", connected to a location, to true or false - DOMAIN_OBJECTS."""
+    def set_schema_state(self, root, loc_id, name, state):
+        """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
         schema_rule_ids = {}
-        schema_rule_ids = self.get_rule_id_and_zone_location_by_name_with_id(root, str(schema), loc_id)
+        schema_rule_ids = self.get_rule_id_and_zone_location_by_name_with_id(root, str(name), loc_id)
         for schema_rule_id,location_id in schema_rule_ids.items():
             if location_id == loc_id:
                 templates = root.findall(".//*[@id='{}']/template".format(schema_rule_id))
@@ -479,7 +476,7 @@ class Plugwise:
                 state = str(state)
                 data = '<rules><rule id="{}"><name><![CDATA[{}]]></name>' \
                        '<template id="{}" /><active>{}</active></rule>' \
-                       '</rules>'.format(schema_rule_id, schema, template_id, state)
+                       '</rules>'.format(schema_rule_id, name, template_id, state)
 
                 xml = requests.put(
                       self._endpoint + uri,
@@ -494,7 +491,7 @@ class Plugwise:
                 return '{} {}'.format(xml.text, data)
 
     def set_preset(self, root, loc_id, loc_type, preset):
-        """Sets the given location-preset on the relevant thermostat - DOMAIN_OBJECTS."""
+        """Sets the given location-preset on the relevant thermostat - from DOMAIN_OBJECTS."""
         location_ids = []
         locations = root.findall('.//location')
         for location in locations:
@@ -537,7 +534,7 @@ class Plugwise:
                 return xml.text
 
     def set_temperature(self, root, loc_id, loc_type, temperature):
-        """Sends a temperature-set request to the relevant thermostat, connected to a location - DOMAIN_OBJECTS."""
+        """Sends a temperature-set request to the relevant thermostat, connected to a location - from DOMAIN_OBJECTS."""
         uri = self.__get_temperature_uri(root, loc_id, loc_type)
         temperature = str(temperature)
 
@@ -556,7 +553,7 @@ class Plugwise:
         return xml.text
 
     def __get_temperature_uri(self, root, loc_id, loc_type):
-        """Determine the location-set_temperature uri - DOMAIN_OBJECTS."""
+        """Determine the location-set_temperature uri - from DOMAIN_OBJECTS."""
         location_ids = []
         locations = root.findall('.//location')
         for location in locations:
@@ -586,7 +583,7 @@ class PlugwiseException(Exception):
 
     
     def __init__(self, arg1, arg2=None):
-        """Set the base exception for interaction with the Plugwsise gateway"""
+        """Set the base exception for interaction with the Plugwise gateway"""
         self.arg1 = arg1
         self.arg2 = arg2
         super(PlugwiseException, self).__init__(arg1)
@@ -594,14 +591,14 @@ class PlugwiseException(Exception):
 
 class RuleIdNotFoundException(PlugwiseException):
     """
-    Raise an exception for when the rule id is not found in the direct objects
+    Raise an exception for when the rule_id is not found in the direct objects
     """
 
     pass
 
 
 class CouldNotSetPresetException(PlugwiseException):
-    """Raise an exception for when the preset can not be set"""
+    """Raise an exception for when the preset could  not be set"""
 
     pass
 
