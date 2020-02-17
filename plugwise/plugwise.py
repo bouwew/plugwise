@@ -68,14 +68,14 @@ class Plugwise:
         data = [{k:v for k,v in zip(keys, n)} for n in thermostats]
         return data
                     
-    def get_device_data(self, id):
+    def get_device_data(self, id, ctrl_id):
         """Provides the device-data, based on location_id, from APPLIANCES."""
         appliances = self.get_appliances()
         domain_objects = self.get_domain_objects()
         #outdoor_temp = self.get_outdoor_temperature(locations)
         #pressure = self.get_water_pressure(appliances)
 
-        controller_data = self.get_appliance_from_appl_id(appliances, id)
+        controller_data = self.get_appliance_from_appl_id(appliances, ctrl_id)
         device_data = self.get_appliance_from_loc_id(domain_objects, id)
         preset = self.get_preset_from_id(domain_objects, id)
         presets = self.get_presets_from_id(domain_objects, id)
@@ -97,10 +97,14 @@ class Plugwise:
             device_data.update( {'available_schedules': a_sch} )
             device_data.update( {'selected_schedule': s_sch} )
             device_data.update( {'last_used': l_sch} )
-        if controller_data != None:
-            return(controller_data)
-        else:
-            return(device_data)
+            if controller_data is not None:
+                device_data.update( {'boiler_temp': controller_data['boiler_temp']} )
+                device_data.update( {'boiler_state': controller_data['boiler_state']} )
+                device_data.update( {'central_heating_state': controller_data['central_heating_state']} )
+                device_data.update( {'cooling_state': controller_data['cooling_state']} )
+                device_data.update( {'dhw_state': controller_data['dhw_state']} )
+
+        return(device_data)
     
     def get_appliances(self):
         """Collects the appliances XML-data."""
@@ -455,10 +459,6 @@ class Plugwise:
                 preset_dictionary[directive.attrib["preset"]] = [float(preset["heating_setpoint"]), float(preset["cooling_setpoint"])]
         if preset_dictionary != {}:
             return preset_dictionary
-
-####################
-# Setting stuff... #
-####################
 
     def set_schema_state(self, root, loc_id, name, state):
         """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
