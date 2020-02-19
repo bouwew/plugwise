@@ -80,17 +80,17 @@ class Plugwise:
         preset = self.get_preset_from_id(domain_objects, id)
         presets = self.get_presets_from_id(domain_objects, id)
         schemas = self.get_schema_names_from_id(domain_objects, id)
+        last_used = self.get_last_active_schema_name_from_id(domain_objects, id)
         a_sch = []
         l_sch = None
         s_sch = None
         if schemas:
             for a,b in schemas.items():
-                if a != "Last":
-                    a_sch.append(a)
-                else:
-                    l_sch = b
-                if b == True:
-                    s_sch = a
+               a_sch.append(a)
+               if b == True:
+                  s_sch = a
+        if last_used:
+            l_sch = last_used
         if device_data is not None:
             device_data.update( {'active_preset': preset} )
             device_data.update( {'presets':  presets} )
@@ -356,31 +356,43 @@ class Plugwise:
 
     def get_schema_names_from_id(self, root, id):
         """Obtains the available schemas or schedules based on the location_id."""
-        epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
-        date_format = "%Y-%m-%dT%H:%M:%S.%f%z"
-        schema_names = {}
+        rule_ids = {}
         locator = 'zone_preset_based_on_time_and_presence_with_override'
-        schema_names = self.get_rule_id_and_zone_location_by_template_tag_with_id(root, locator, id)
+        rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(root, locator, id)
         schemas = {}
         l_schemas = {}
-        if schema_names:
-            for key,val in schema_names.items():
+        if rule_ids:
+            for key,val in rule_ids.items():
                 if val == id:
                     name = root.find("rule[@id='" + key + "']/name").text
                     active = False
                     if root.find("rule[@id='" + key + "']/active").text == 'true':
                         active = True
                     schemas[name] = active
-                    date = root.find("rule[@id='" + key + "']/modified_date").text
-                    # Python 3.6 fix (%z %Z issue)
-                    corrected = re.sub(r"([-+]\d{2}):(\d{2})(?:(\d{2}))?$", r"\1\2\3", date)
-                    time = datetime.datetime.strptime(corrected, date_format)
-                    l_schemas[name] = (time - epoch).total_seconds()
-            if l_schemas:
-                last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
-                schemas['Last'] = last_modified
         if schemas != {}:
             return schemas
+            
+    def get_last_active_schema_name_from_id(self, root, id):
+        """Determine the last active schema."""
+        epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
+        date_format = "%Y-%m-%dT%H:%M:%S.%f%z"
+        rule_ids = {}
+        locator = 'zone_preset_based_on_time_and_presence_with_override'
+        rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(root, locator, id)
+        schemas = {}
+        if rule_ids:
+            for key,val in rule_ids.items():
+                if val == id:
+                    schema_name = root.find("rule[@id='" + key + "']/name").text
+                    schema_date = root.find("rule[@id='" + key + "']/modified_date").text
+                    # Python 3.6 fix (%z %Z issue)
+                    corrected = re.sub(
+                        r"([-+]\d{2}):(\d{2})(?:(\d{2}))?$", r"\1\2\3", schema_date,
+                    )
+                    schema_time = datetime.datetime.strptime(corrected, date_format)
+                    schemas[schema_name] = (schema_time - epoch).total_seconds()
+                last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
+                return last_modified
 
     @staticmethod
     def get_rule_id_and_zone_location_by_template_tag_with_id(root, rule_name, id):
