@@ -466,7 +466,7 @@ class Plugwise:
             preset = directive.find("then").attrib
             keys, values = zip(*preset.items())
             if str(keys[0]) == 'setpoint':
-                preset_dictionary[directive.attrib["preset"]] = float(preset["setpoint"])
+                preset_dictionary[directive.attrib["preset"]] = [float(preset["setpoint"]), 0]
             else:
                 preset_dictionary[directive.attrib["preset"]] = [float(preset["heating_setpoint"]), float(preset["cooling_setpoint"])]
         if preset_dictionary != {}:
