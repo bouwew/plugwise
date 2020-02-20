@@ -182,6 +182,8 @@ class Plugwise:
                 setpoint = location.find(therm_loc).text
                 setp_val = float(setpoint)
             temp_loc = (".//logs/point_log[type='temperature']/period/measurement")
+            setp_val = None
+            temp_val = None
             if location.find(therm_loc) is not None:
                 temperature = location.find(temp_loc).text
                 temp_val = float(temperature)
