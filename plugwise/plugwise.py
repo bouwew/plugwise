@@ -105,7 +105,22 @@ class Plugwise:
                 device_data.update( {'dhw_state': controller_data['dhw_state']} )
 
         return(device_data)
-    
+        
+    def set_schedule_state(self, loc_id,name, state)
+        """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
+        domain_objects = self.get_domain_objects()
+        self._set_schema_state(domain_objects, loc_id, name, state)
+        
+    def set_preset(self, loc_id, loc_type, preset):
+        """Sets the given location-preset on the relevant thermostat - from DOMAIN_OBJECTS."""
+        domain_objects = self.get_domain_objects()
+        self._set_preset(domain_objects, loc_id, loc_type, preset)
+        
+    def set_temperature(self, loc_id, loc_type, temperature):
+        """Sends a temperature-set request to the relevant thermostat, connected to a location - from DOMAIN_OBJECTS."""
+        domain_objects = self.get_domain_objects()
+        self._set_temp(domain_objects, loc_id, loc_type, temperature)
+
     def get_appliances(self):
         """Collects the appliances XML-data."""
         xml = requests.get(
@@ -471,9 +486,9 @@ class Plugwise:
                 preset_dictionary[directive.attrib["preset"]] = [float(preset["heating_setpoint"]), float(preset["cooling_setpoint"])]
         if preset_dictionary != {}:
             return preset_dictionary
-
-    def set_schema_state(self, root, loc_id, name, state):
-        """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
+            
+    def _set_schema_state(self, root, loc_id, name, state):
+        """Sets the schedule, helper-function."""
         schema_rule_ids = {}
         schema_rule_ids = self.get_rule_id_and_zone_location_by_name_with_id(root, str(name), loc_id)
         for schema_rule_id,location_id in schema_rule_ids.items():
@@ -502,8 +517,8 @@ class Plugwise:
                     CouldNotSetTemperatureException("Could not set the schema to {}.".format(state) + xml.text)
                 return '{} {}'.format(xml.text, data)
 
-    def set_preset(self, root, loc_id, loc_type, preset):
-        """Sets the given location-preset on the relevant thermostat - from DOMAIN_OBJECTS."""
+    def _set_preset(self, root, loc_id, loc_type, preset):
+        """Sets the preset, helper function."""
         location_ids = []
         locations = root.findall('.//location')
         for location in locations:
@@ -545,8 +560,8 @@ class Plugwise:
                     raise CouldNotSetPresetException("Could not set the given preset: " + xml.text)
                 return xml.text
 
-    def set_temperature(self, root, loc_id, loc_type, temperature):
-        """Sends a temperature-set request to the relevant thermostat, connected to a location - from DOMAIN_OBJECTS."""
+    def _set_temp(self, root, loc_id, loc_type, temperature):
+        """Sends a temperature-set request, helper function."""
         uri = self.__get_temperature_uri(root, loc_id, loc_type)
         temperature = str(temperature)
 
