@@ -106,7 +106,7 @@ class Plugwise:
 
         return(device_data)
         
-    def set_schedule_state(self, loc_id,name, state)
+    def set_schedule_state(self, loc_id,name, state):
         """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
         domain_objects = self.get_domain_objects()
         self._set_schema_state(domain_objects, loc_id, name, state)
