@@ -231,7 +231,7 @@ class Plugwise:
                     if appliance.find('location') is not None:
                         appl_location = appliance.find('location').attrib['id']
                         if appl_location == id:
-                            if (appliance_type == 'zone_thermostat') or (appliance_type == 'thermostatic_radiator_valve'):
+                            if (appliance_type == 'zone_thermostat') or (appliance_type == 'thermostatic_radiator_valve') or (appliance_type == 'thermostat'):
                                 appl_dict['type'] = appliance_type
                                 locator = (".//logs/point_log[type='battery']/period/measurement")
                                 appl_dict['battery'] = None
