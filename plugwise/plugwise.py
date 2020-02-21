@@ -211,8 +211,9 @@ class Plugwise:
                     temp_list.append(appliance_type)
         if 'zone_thermostat' in temp_list:
             device_list.append('zone_thermostat')
-        if 'thermostatic_radiator_valve' in temp_list:
-            device_list = temp_list
+        else:
+            if 'thermostatic_radiator_valve' in temp_list:
+                device_list = temp_list
           
         if device_list != []:
             return device_list
@@ -230,27 +231,28 @@ class Plugwise:
                     if appliance.find('location') is not None:
                         appl_location = appliance.find('location').attrib['id']
                         if appl_location == id:
-                            appl_dict['type'] = appliance_type
-                            locator = (".//logs/point_log[type='battery']/period/measurement")
-                            appl_dict['battery'] = None
-                            if appliance.find(locator) is not None:
-                                battery = appliance.find(locator).text
-                                value = float(battery)
-                                battery = '{:.2f}'.format(round(value, 2))
-                                appl_dict['battery'] = battery
-                            locator = (".//logs/point_log[type='thermostat']/period/measurement")
-                            appl_dict['setpoint_temp'] = None
-                            if appliance.find(locator) is not None:
-                                thermostat = appliance.find(locator).text
-                                thermostat = float(thermostat)
-                                appl_dict['setpoint_temp'] = thermostat
-                            locator = (".//logs/point_log[type='temperature']/period/measurement")
-                            appl_dict['current_temp'] = None
-                            if appliance.find(locator) is not None:
-                                temperature = appliance.find(locator).text
-                                temperature = float(temperature)
-                                appl_dict['current_temp'] = temperature
-                            appl_list.append(appl_dict.copy())
+                            if (appliance_type == 'zone_thermostat') or (appliance_type == 'thermostatic_radiator_valve'):
+                                appl_dict['type'] = appliance_type
+                                locator = (".//logs/point_log[type='battery']/period/measurement")
+                                appl_dict['battery'] = None
+                                if appliance.find(locator) is not None:
+                                    battery = appliance.find(locator).text
+                                    value = float(battery)
+                                    battery = '{:.2f}'.format(round(value, 2))
+                                    appl_dict['battery'] = battery
+                                locator = (".//logs/point_log[type='thermostat']/period/measurement")
+                                appl_dict['setpoint_temp'] = None
+                                if appliance.find(locator) is not None:
+                                    thermostat = appliance.find(locator).text
+                                    thermostat = float(thermostat)
+                                    appl_dict['setpoint_temp'] = thermostat
+                                locator = (".//logs/point_log[type='temperature']/period/measurement")
+                                appl_dict['current_temp'] = None
+                                if appliance.find(locator) is not None:
+                                    temperature = appliance.find(locator).text
+                                    temperature = float(temperature)
+                                    appl_dict['current_temp'] = temperature
+                                appl_list.append(appl_dict.copy())
         
         for dict in sorted(appl_list, key=lambda k: k['type'], reverse=True):
             if dict['type'] == "zone_thermostat":
