@@ -104,7 +104,7 @@ class Plugwise:
                 device_data.update( {'cooling_state': controller_data['cooling_state']} )
                 device_data.update( {'dhw_state': controller_data['dhw_state']} )
 
-        return(device_data)
+        return device_data
         
     def set_schedule_state(self, loc_id,name, state):
         """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
@@ -211,10 +211,11 @@ class Plugwise:
                     temp_list.append(appliance_type)
         if 'zone_thermostat' in temp_list:
             device_list.append('zone_thermostat')
-        else:
+        if 'thermostatic_radiator_valve' in temp_list:
             device_list = temp_list
           
-        return(device_list)
+        if device_list != []:
+            return device_list
     
     def get_appliance_from_loc_id(self, root, id):
         """Obtains the appliance-data connected to a location - from APPLIANCES."""
