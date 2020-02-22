@@ -568,20 +568,22 @@ class Plugwise:
     def _set_temp(self, root, loc_id, loc_type, temperature):
         """Sends a temperature-set request, helper function."""
         uri = self.__get_temperature_uri(root, loc_id, loc_type)
-        if temperature is not None:
-            temperature = str(temperature)
+        temperature = str(temperature)
 
-        xml = requests.put(
-              self._endpoint + uri,
-              auth=(self._username, self._password),
-              data="<thermostat_functionality><setpoint>" + temperature + "</setpoint></thermostat_functionality>",
-              headers={"Content-Type": "text/xml"},
-              timeout=10,
-        )
+        if uri is not None:
+            xml = requests.put(
+                self._endpoint + uri,
+                auth=(self._username, self._password),
+                data="<thermostat_functionality><setpoint>" + temperature + "</setpoint></thermostat_functionality>",
+                headers={"Content-Type": "text/xml"},
+                timeout=10,
+            )
 
-        if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-            CouldNotSetTemperatureException("Could not set the temperature." + xml.text)
-        return xml.text
+            if xml.status_code != requests.codes.ok: # pylint: disable=no-member
+                CouldNotSetTemperatureException("Could not set the temperature." + xml.text)
+            return xml.text
+        else:
+            CouldNotSetTemperatureException("Could not obtain the temperature_uri.")
 
     def __get_temperature_uri(self, root, loc_id, loc_type):
         """Determine the location-set_temperature uri - from DOMAIN_OBJECTS."""
