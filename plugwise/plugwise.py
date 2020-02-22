@@ -568,14 +568,13 @@ class Plugwise:
     def _set_temp(self, root, loc_id, loc_type, temperature):
         """Sends a temperature-set request, helper function."""
         uri = self.__get_temperature_uri(root, loc_id, loc_type)
-        #temperature = str(temperature)
+        if temperature:
+            temperature = str(temperature)
 
         xml = requests.put(
               self._endpoint + uri,
               auth=(self._username, self._password),
-              data="<thermostat_functionality><setpoint>"
-              + temperature
-              + "</setpoint></thermostat_functionality>",
+              data="<thermostat_functionality><setpoint>" + temperature + "</setpoint></thermostat_functionality>",
               headers={"Content-Type": "text/xml"},
               timeout=10,
         )
