@@ -2,11 +2,14 @@
 Plugwise library for use with Home Assistant Core.
 """
 import requests
-import datetime
-import pytz
 import xml.etree.cElementTree as Etree
 
-# For python 3.6 strptime fix
+# Time related
+import datetime
+import pytz
+from dateutil.parser import parse
+
+# For XML corrections
 import re
 
 PING = "/ping"
@@ -405,11 +408,7 @@ class Plugwise:
                 if val == id:
                     schema_name = root.find("rule[@id='" + key + "']/name").text
                     schema_date = root.find("rule[@id='" + key + "']/modified_date").text
-                    # Python 3.6 fix (%z %Z issue)
-                    corrected = re.sub(
-                        r"([-+]\d{2}):(\d{2})(?:(\d{2}))?$", r"\1\2\3", schema_date,
-                    )
-                    schema_time = datetime.datetime.strptime(corrected, date_format)
+                    schema_time = parse(schema_date)
                     schemas[schema_name] = (schema_time - epoch).total_seconds()
                 last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
                 return last_modified
@@ -525,89 +524,96 @@ class Plugwise:
     def _set_preset(self, root, loc_id, loc_type, preset):
         """Sets the preset, helper function."""
         location_ids = []
-        locations = root.findall('.//location')
-        for location in locations:
-            locator = ("appliance[type='" + loc_type + "']/location")
-            if root.find(locator) is not None:
-                location_ids.append(root.find(locator).attrib['id'])
-        for location_id in location_ids:
-            if location_id == loc_id:
-                locations_root = self.get_locations()
-                current_location = locations_root.find("location[@id='" + location_id + "']")
-                location_name = current_location.find('name').text
-                location_type = current_location.find('type').text
+        appliances = root.findall('.//appliance')
+        for appliance in appliances:
+            if appliance.find('type') is not None:
+                appliance_type = appliance.find('type').text
+                if appliance_type == loc_type:
+                    for location in appliance.iter('location'):
+                        if location.attrib is not None:
+                            location_id = location.attrib['id']
+                            if location_id == loc_id:
+                                locations_root = self.get_locations()
+                                current_location = locations_root.find("location[@id='" + location_id + "']")
+                                location_name = current_location.find('name').text
+                                location_type = current_location.find('type').text
 
-                xml = requests.put(
-                        self._endpoint
-                        + LOCATIONS
-                        + ";id="
-                        + location_id,
-                        auth=(self._username, self._password),
-                        data="<locations>"
-                        + '<location id="'
-                        + location_id
-                        + '">'
-                        + "<name>"
-                        + location_name
-                        + "</name>"
-                        + "<type>"
-                        + location_type
-                        + "</type>"
-                        + "<preset>"
-                        + preset
-                        + "</preset>"
-                        + "</location>"
-                        + "</locations>",
-                        headers={"Content-Type": "text/xml"},
-                        timeout=10,
-                    )
-                if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-                    raise CouldNotSetPresetException("Could not set the given preset: " + xml.text)
-                return xml.text
+                                xml = requests.put(
+                                        self._endpoint
+                                        + LOCATIONS
+                                        + ";id="
+                                        + location_id,
+                                        auth=(self._username, self._password),
+                                        data="<locations>"
+                                        + '<location id="'
+                                        + location_id
+                                        + '">'
+                                        + "<name>"
+                                        + location_name
+                                        + "</name>"
+                                        + "<type>"
+                                        + location_type
+                                        + "</type>"
+                                        + "<preset>"
+                                        + preset
+                                        + "</preset>"
+                                        + "</location>"
+                                        + "</locations>",
+                                        headers={"Content-Type": "text/xml"},
+                                        timeout=10,
+                                    )
+                                if xml.status_code != requests.codes.ok: # pylint: disable=no-member
+                                    raise CouldNotSetPresetException("Could not set the given preset: " + xml.text)
+                                return xml.text
 
     def _set_temp(self, root, loc_id, loc_type, temperature):
         """Sends a temperature-set request, helper function."""
         uri = self.__get_temperature_uri(root, loc_id, loc_type)
         temperature = str(temperature)
 
-        xml = requests.put(
-              self._endpoint + uri,
-              auth=(self._username, self._password),
-              data="<thermostat_functionality><setpoint>"
-              + temperature
-              + "</setpoint></thermostat_functionality>",
-              headers={"Content-Type": "text/xml"},
-              timeout=10,
-        )
+        if uri is not None:
+            xml = requests.put(
+                self._endpoint + uri,
+                auth=(self._username, self._password),
+                data="<thermostat_functionality><setpoint>" + temperature + "</setpoint></thermostat_functionality>",
+                headers={"Content-Type": "text/xml"},
+                timeout=10,
+            )
 
-        if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-            CouldNotSetTemperatureException("Could not set the temperature." + xml.text)
-        return xml.text
+            if xml.status_code != requests.codes.ok: # pylint: disable=no-member
+                CouldNotSetTemperatureException("Could not set the temperature." + xml.text)
+            return xml.text
+        else:
+            CouldNotSetTemperatureException("Could not obtain the temperature_uri.")
 
     def __get_temperature_uri(self, root, loc_id, loc_type):
         """Determine the location-set_temperature uri - from DOMAIN_OBJECTS."""
         location_ids = []
-        locations = root.findall('.//location')
-        for location in locations:
-            locator = ("appliance[type='" + loc_type + "']/location")
-            if root.find(locator) is not None:
-                location_ids.append(root.find(locator).attrib['id'])
-        for location_id in location_ids:
-            if location_id == loc_id:
-                locator = (
-                    "location[@id='"
-                    + location_id
-                    + "']/actuator_functionalities/thermostat_functionality"
-                )
-                thermostat_functionality_id = root.find(locator).attrib['id']
-                temperature_uri = (
-                    LOCATIONS
-                    + ";id="
-                    + location_id
-                    + "/thermostat;id="
-                    + thermostat_functionality_id
-                )
-                return temperature_uri
+        appliances = root.findall('.//appliance')
+        for appliance in appliances:
+            if appliance.find('type') is not None:
+                appliance_type = appliance.find('type').text
+                if appliance_type == loc_type:
+                    for location in appliance.iter('location'):
+                        if location.attrib is not None:
+                            location_id = location.attrib['id']
+                            if location_id == loc_id:
+                                locator = (
+                                    "location[@id='"
+                                    + location_id
+                                    + "']/actuator_functionalities/thermostat_functionality"
+                                )
+                                thermostat_functionality_id = root.find(locator).attrib['id']
+                                
+                                temperature_uri = (
+                                    LOCATIONS
+                                    + ";id="
+                                    + location_id
+                                    + "/thermostat;id="
+                                    + thermostat_functionality_id
+                                )
+                                
+                                return temperature_uri
 
 
 class PlugwiseException(Exception):
