@@ -588,27 +588,31 @@ class Plugwise:
     def __get_temperature_uri(self, root, loc_id, loc_type):
         """Determine the location-set_temperature uri - from DOMAIN_OBJECTS."""
         location_ids = []
-        locations = root.findall('.//location')
-        for location in locations:
-            locator = ("appliance[type='" + loc_type + "']/location")
-            if root.find(locator) is not None:
-                location_ids.append(root.find(locator).attrib['id'])
-        for location_id in location_ids:
-            if location_id == loc_id:
-                locator = (
-                    "location[@id='"
-                    + location_id
-                    + "']/actuator_functionalities/thermostat_functionality"
-                )
-                thermostat_functionality_id = root.find(locator).attrib['id']
-                temperature_uri = (
-                    LOCATIONS
-                    + ";id="
-                    + location_id
-                    + "/thermostat;id="
-                    + thermostat_functionality_id
-                )
-                return temperature_uri
+        appliances = root.findall('.//appliance')
+        for appliance in appliances:
+            if appliance.find('type') is not None:
+                appliance_type = appliance.find('type').text
+                if appliance_type == loc_type:
+                    for location in appliance.iter('location'):
+                        if location.attrib is not None:
+                            location_id = location.attrib['id']
+                            if location_id == loc_id:
+                                locator = (
+                                    "location[@id='"
+                                    + location_id
+                                    + "']/actuator_functionalities/thermostat_functionality"
+                                )
+                                thermostat_functionality_id = root.find(locator).attrib['id']
+                                
+                                temperature_uri = (
+                                    LOCATIONS
+                                    + ";id="
+                                    + location_id
+                                    + "/thermostat;id="
+                                    + thermostat_functionality_id
+                                )
+                                
+                                return temperature_uri
 
 
 class PlugwiseException(Exception):
