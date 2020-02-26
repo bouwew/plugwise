@@ -71,10 +71,10 @@ class Plugwise:
         data = [{k:v for k,v in zip(keys, n)} for n in thermostats]
         return data
                     
-    def get_device_data(self, id, ctrl_id):
+    def get_device_data(self, appliances, domain_objects, id, ctrl_id):
         """Provides the device-data, based on location_id, from APPLIANCES."""
-        appliances = self.get_appliances()
-        domain_objects = self.get_domain_objects()
+        #appliances = self.get_appliances()
+        #domain_objects = self.get_domain_objects()
         #outdoor_temp = self.get_outdoor_temperature(locations)
         #pressure = self.get_water_pressure(appliances)
 
@@ -109,19 +109,19 @@ class Plugwise:
 
         return device_data
         
-    def set_schedule_state(self, loc_id,name, state):
+    def set_schedule_state(self, domain_objects, loc_id,name, state):
         """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
-        domain_objects = self.get_domain_objects()
+        #domain_objects = self.get_domain_objects()
         self._set_schema_state(domain_objects, loc_id, name, state)
         
-    def set_preset(self, loc_id, loc_type, preset):
+    def set_preset(self, domain_objects, loc_id, loc_type, preset):
         """Sets the given location-preset on the relevant thermostat - from DOMAIN_OBJECTS."""
-        domain_objects = self.get_domain_objects()
+        #domain_objects = self.get_domain_objects()
         self._set_preset(domain_objects, loc_id, loc_type, preset)
         
-    def set_temperature(self, loc_id, loc_type, temperature):
+    def set_temperature(self, domain_objects, loc_id, loc_type, temperature):
         """Sends a temperature-set request to the relevant thermostat, connected to a location - from DOMAIN_OBJECTS."""
-        domain_objects = self.get_domain_objects()
+        #selfdomain_objects = self.get_domain_objects()
         self._set_temp(domain_objects, loc_id, loc_type, temperature)
 
     def get_appliances(self):
