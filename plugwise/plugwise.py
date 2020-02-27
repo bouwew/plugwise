@@ -73,39 +73,47 @@ class Plugwise:
                     
     def get_device_data(self, appliances, domain_objects, id, ctrl_id):
         """Provides the device-data, based on location_id, from APPLIANCES."""
-        #appliances = self.get_appliances()
-        #domain_objects = self.get_domain_objects()
         #outdoor_temp = self.get_outdoor_temperature(locations)
         #pressure = self.get_water_pressure(appliances)
 
-        controller_data = self.get_appliance_from_appl_id(appliances, ctrl_id)
-        device_data = self.get_appliance_from_loc_id(domain_objects, id)
-        preset = self.get_preset_from_id(domain_objects, id)
-        presets = self.get_presets_from_id(domain_objects, id)
-        schemas = self.get_schema_names_from_id(domain_objects, id)
-        last_used = self.get_last_active_schema_name_from_id(domain_objects, id)
-        a_sch = []
-        l_sch = None
-        s_sch = None
-        if schemas:
-            for a,b in schemas.items():
-               a_sch.append(a)
-               if b == True:
-                  s_sch = a
-        if last_used:
-            l_sch = last_used
-        if device_data is not None:
-            device_data.update( {'active_preset': preset} )
-            device_data.update( {'presets':  presets} )
-            device_data.update( {'available_schedules': a_sch} )
-            device_data.update( {'selected_schedule': s_sch} )
-            device_data.update( {'last_used': l_sch} )
-            if controller_data is not None:
-                device_data.update( {'boiler_temp': controller_data['boiler_temp']} )
-                device_data.update( {'boiler_state': controller_data['boiler_state']} )
-                device_data.update( {'central_heating_state': controller_data['central_heating_state']} )
-                device_data.update( {'cooling_state': controller_data['cooling_state']} )
-                device_data.update( {'dhw_state': controller_data['dhw_state']} )
+        if ctrl_id:
+            controller_data = self.get_appliance_from_appl_id(appliances, ctrl_id)
+        device_data = {}
+        if id:  
+            device_data = self.get_appliance_from_loc_id(domain_objects, id)
+            preset = self.get_preset_from_id(domain_objects, id)
+            presets = self.get_presets_from_id(domain_objects, id)
+            schemas = self.get_schema_names_from_id(domain_objects, id)
+            last_used = self.get_last_active_schema_name_from_id(domain_objects, id)
+            a_sch = []
+            l_sch = None
+            s_sch = None
+            if schemas:
+                for a,b in schemas.items():
+                   a_sch.append(a)
+                   if b == True:
+                      s_sch = a
+            if last_used:
+                l_sch = last_used
+            if device_data is not None:
+                device_data.update( {'active_preset': preset} )
+                device_data.update( {'presets':  presets} )
+                device_data.update( {'available_schedules': a_sch} )
+                device_data.update( {'selected_schedule': s_sch} )
+                device_data.update( {'last_used': l_sch} )
+                if controller_data is not None:
+                    device_data.update( {'boiler_state': controller_data['boiler_state']} )
+                    device_data.update( {'central_heating_state': controller_data['central_heating_state']} )
+                    device_data.update( {'cooling_state': controller_data['cooling_state']} )
+                    device_data.update( {'dhw_state': controller_data['dhw_state']} )
+        else:
+            device_data['type'] = 'heater_central'
+            device_data.update( {'boiler_temp': controller_data['boiler_temp']} )
+            device_data.update( {'boiler_state': controller_data['boiler_state']} )
+            device_data.update( {'central_heating_state': controller_data['central_heating_state']} )
+            device_data.update( {'cooling_state': controller_data['cooling_state']} )
+            device_data.update( {'dhw_state': controller_data['dhw_state']} )
+
 
         return device_data
         
@@ -636,11 +644,5 @@ class RuleIdNotFoundException(PlugwiseException):
 
 class CouldNotSetPresetException(PlugwiseException):
     """Raise an exception for when the preset could  not be set"""
-
-    pass
-
-
-class CouldNotSetTemperatureException(PlugwiseException):
-    """Raise an exception for when the temperature could not be set"""
 
     pass
