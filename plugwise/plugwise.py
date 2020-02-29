@@ -245,6 +245,7 @@ class Plugwise:
                             if (appliance_type == 'zone_thermostat') or (appliance_type == 'thermostatic_radiator_valve') or (appliance_type == 'thermostat'):
                                 appl_dict['type'] = appliance_type
                                 locator = (".//logs/point_log[type='battery']/period/measurement")
+                                appl_dict['battery'] = None
                                 if appliance.find(locator) is not None:
                                     battery = appliance.find(locator).text
                                     value = float(battery)
