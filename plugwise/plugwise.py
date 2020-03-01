@@ -647,3 +647,9 @@ class CouldNotSetPresetException(PlugwiseException):
     """Raise an exception for when the preset could  not be set"""
 
     pass
+    
+    
+class CouldNotSetTemperatureException(PlugwiseException):
+    """Raise an exception for when the temperature could not be set."""
+
+    pass
