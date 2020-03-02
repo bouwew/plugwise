@@ -606,7 +606,7 @@ class Plugwise:
         temperature_uri = (
             LOCATIONS
             + ";id="
-            + location_id
+            + loc_id
             + "/thermostat;id="
             + thermostat_functionality_id
         )
