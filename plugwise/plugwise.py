@@ -420,14 +420,21 @@ class Plugwise:
 
     def get_outdoor_temperature(self, root):
         """Obtains the outdoor_temperature from the thermostat."""
-        locations = root.findall(".//location")
-        for location in locations:
-            locator = (".//logs/point_log[type='outdoor_temperature']/period/measurement")
-            if location.find(locator) is not None:
-                measurement = location.find(locator).text
-                value = float(measurement)
-                value = '{:.1f}'.format(round(value, 1))
-                return value
+        locator = (".//logs/point_log[type='outdoor_temperature']/period/measurement")
+        if root.find(locator) is not None:
+            measurement = root.find(locator).text
+            value = float(measurement)
+            value = '{:.1f}'.format(round(value, 1))
+            return value
+
+    def get_illuminance(self, root):
+        """Obtain the illuminance value from the thermostat."""
+        locator = (".//logs/point_log[type='illuminance']/period/measurement")
+        if root.find(locator) is not None:
+            measurement = root.find(locator).text
+            value = float(measurement)
+            value = '{:.1f}'.format(round(value, 1))
+            return value
 
     @staticmethod
     def get_preset_dictionary(root, rule_id):
