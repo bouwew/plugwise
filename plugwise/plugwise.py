@@ -61,10 +61,10 @@ class Plugwise:
                 if thermostat != []:
                     thermostats.append(thermostat)
         
-        for loc_id,loc_list in loc_dict.items():
+        for loc_id,location in loc_dict.items():
             thermostat = []
             device = self.get_thermostat_from_id(appliances, loc_id)
-            thermostat.append(loc_list[0])
+            thermostat.append(location)
             thermostat.append(loc_id)
             if thermostat != []:
                 thermostats.append(thermostat)
@@ -73,9 +73,8 @@ class Plugwise:
                     
     def get_device_data(self, appliances, domain_objects, id, ctrl_id):
         """Provides the device-data, based on location_id, from APPLIANCES."""
-        #outdoor_temp = self.get_outdoor_temperature(locations)
-        #pressure = self.get_water_pressure(appliances)
-
+        outdoor_temp = self.get_outdoor_temperature(domain_objects)
+ 
         if ctrl_id:
             controller_data = self.get_appliance_from_appl_id(appliances, ctrl_id)
         device_data = {}
@@ -109,27 +108,26 @@ class Plugwise:
         else:
             device_data['type'] = 'heater_central'
             device_data.update( {'boiler_temp': controller_data['boiler_temp']} )
+            if 'water_pressure' in controller_data:
+                device_data.update( {'water_pressure': controller_data['water_pressure']} )
+            device_data.update( {'outdoor_temp': outdoor_temp} )
             device_data.update( {'boiler_state': controller_data['boiler_state']} )
             device_data.update( {'central_heating_state': controller_data['central_heating_state']} )
             device_data.update( {'cooling_state': controller_data['cooling_state']} )
             device_data.update( {'dhw_state': controller_data['dhw_state']} )
 
-
         return device_data
         
     def set_schedule_state(self, domain_objects, loc_id,name, state):
         """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
-        #domain_objects = self.get_domain_objects()
         self._set_schema_state(domain_objects, loc_id, name, state)
         
     def set_preset(self, loc_id, loc_type, preset):
         """Sets the given location-preset on the relevant thermostat - from DOMAIN_OBJECTS."""
-        #domain_objects = self.get_domain_objects()
         self._set_preset(loc_id, loc_type, preset)
         
     def set_temperature(self, domain_objects, loc_id, loc_type, temperature):
         """Sends a temperature-set request to the relevant thermostat, connected to a location - from DOMAIN_OBJECTS."""
-        #selfdomain_objects = self.get_domain_objects()
         self._set_temp(domain_objects, loc_id, loc_type, temperature)
 
     def get_appliances(self):
@@ -180,6 +178,19 @@ class Plugwise:
     def escape_illegal_xml_characters(root):
         """Replaces illegal &-characters."""
         return re.sub(r'&([^a-zA-Z#])',r'&amp;\1',root)
+
+    def get_appliance_dictionary(self, root):
+        """Obtains the existing appliance types and ids - from APPLIANCES."""
+        appliance_dictionary = {}
+        for appliance in root:
+            appliance_name = appliance.find('name').text
+            if "Gateway" not in appliance_name:
+                appliance_id = appliance.attrib['id']
+                appliance_type = appliance.find('type').text
+                if appliance_type == 'heater_central':
+                    appliance_dictionary[appliance_id] = appliance_type
+
+        return appliance_dictionary
     
     def get_location_dictionary(self,root):
         """Obtains the existing locations and connected applicance_id's - from LOCATIONS."""
@@ -187,23 +198,8 @@ class Plugwise:
         for location in root:
             location_name = location.find('name').text
             location_id = location.attrib['id']
-            preset = location.find('preset').text
-            therm_loc = (".//logs/point_log[type='thermostat']/period/measurement")
-            if location.find(therm_loc) is not None:
-                setpoint = location.find(therm_loc).text
-                setp_val = float(setpoint)
-            temp_loc = (".//logs/point_log[type='temperature']/period/measurement")
-            setp_val = None
-            temp_val = None
-            if location.find(therm_loc) is not None:
-                temperature = location.find(temp_loc).text
-                temp_val = float(temperature)
-            appl_id_list = []
-            for appliance in location.iter('appliance'):
-                appliance_id = appliance.attrib['id']
-                appl_id_list.append(appliance_id)
             if location_name != "Home":
-                location_dictionary[location_id] = [location_name, appl_id_list, preset, setp_val, temp_val]
+                location_dictionary[location_id] = location_name
             
         return location_dictionary
 
@@ -288,74 +284,36 @@ class Plugwise:
                         value = float(measurement)
                         boiler_temperature = '{:.1f}'.format(round(value, 1))
                         appliance_data['boiler_temp'] = boiler_temperature
-                    locator = (".//logs/point_log[type='boiler_state']/period/measurement")
+                    water_pressure = None
+                    locator = (".//logs/point_log[type='central_heater_water_pressure']/period/measurement")
+                    if appliance.find(locator) is not None:
+                        measurement = appliance.find(locator).text
+                        value = float(measurement)
+                        water_pressure = '{:.1f}'.format(round(value, 1))
+                        appliance_data['water_pressure'] = water_pressure
                     appliance_data['boiler_state'] = None
+                    locator = (".//logs/point_log[type='boiler_state']/period/measurement")
                     if appliance.find(locator) is not None:
                         boiler_state = (appliance.find(locator).text == "on")
                         appliance_data['boiler_state'] = boiler_state
-                    locator = (".//logs/point_log[type='central_heating_state']/period/measurement")
                     appliance_data['central_heating_state'] = None
+                    locator = (".//logs/point_log[type='central_heating_state']/period/measurement")
                     if appliance.find(locator) is not None:
                         central_heating_state = (appliance.find(locator).text == "on")
                         appliance_data['central_heating_state'] = central_heating_state
-                    locator = (".//logs/point_log[type='cooling_state']/period/measurement")
                     appliance_data['cooling_state'] = None
+                    locator = (".//logs/point_log[type='cooling_state']/period/measurement")
                     if appliance.find(locator) is not None:                      
                         cooling_state = (appliance.find(locator).text == "on")
                         appliance_data['cooling_state'] = cooling_state
-                    locator = (".//logs/point_log[type='domestic_hot_water_state']/period/measurement")
                     appliance_data['dhw_state'] = None
+                    locator = (".//logs/point_log[type='domestic_hot_water_state']/period/measurement")
                     if appliance.find(locator) is not None:                      
                         domestic_hot_water_state = (appliance.find(locator).text == "on")
                         appliance_data['dhw_state'] = domestic_hot_water_state
      
         if appliance_data != {}:
             return appliance_data
-
-    def get_appliance_dictionary(self, root):
-        """Obtains the existing appliance types and ids - from APPLIANCES."""
-        appliance_dictionary = {}
-        for appliance in root:
-            appliance_name = appliance.find('name').text
-            if "Gateway" not in appliance_name:
-                appliance_id = appliance.attrib['id']
-                appliance_type = appliance.find('type').text
-                if appliance_type != 'heater_central':
-                    locator = (".//logs/point_log[type='battery']/period/measurement")
-                    battery = None
-                    if appliance.find(locator) is not None:
-                        battery = appliance.find(locator).text
-                    appliance_dictionary[appliance_id] = (appliance_type, battery)
-                else:
-                    boiler_temperature = None
-                    locator = (".//logs/point_log[type='boiler_temperature']/period/measurement")
-                    if appliance.find(locator) is not None:
-                        measurement = appliance.find(locator).text
-                        value = float(measurement)
-                        boiler_temperature = '{:.1f}'.format(round(value, 1))
-                    locator = (".//logs/point_log[type='boiler_state']/period/measurement")
-                    boiler_state =  None
-                    if appliance.find(locator) is not None:
-                        boiler_state = (appliance.find(locator).text == "on")
-                    locator = (".//logs/point_log[type='central_heating_state']/period/measurement")
-                    central_heating_state = None
-                    if appliance.find(locator) is not None:
-                        central_heating_state = (appliance.find(locator).text == "on")
-                    locator = (".//logs/point_log[type='cooling_state']/period/measurement")
-                    cooling_state =  None
-                    if appliance.find(locator) is not None:                      
-                        cooling_state = (appliance.find(locator).text == "on")
-                    locator = (".//logs/point_log[type='domestic_hot_water_state']/period/measurement")
-                    domestic_hot_water_state =  None
-                    if appliance.find(locator) is not None:                      
-                        domestic_hot_water_state = (appliance.find(locator).text == 'on')                    
-                    appliance_dictionary[appliance_id] = (
-                        appliance_type,
-                        boiler_temperature, boiler_state,
-                        central_heating_state, cooling_state,
-                        domestic_hot_water_state
-                        )
-        return appliance_dictionary
 
     def get_preset_from_id(self, root, id):
         """Obtains the active preset based on the location_id - from DOMAIN_OBJECTS."""
@@ -467,17 +425,6 @@ class Plugwise:
             locator = (".//logs/point_log[type='outdoor_temperature']/period/measurement")
             if location.find(locator) is not None:
                 measurement = location.find(locator).text
-                value = float(measurement)
-                value = '{:.1f}'.format(round(value, 1))
-                return value
-
-    def get_water_pressure(self, root):
-        """Obtains the water pressure value from the thermostat"""
-        appliances = root.findall(".//appliance")
-        for appliance in appliances:
-            locator = (".//logs/point_log[type='central_heater_water_pressure']/period/measurement")
-            if appliance.find(locator) is not None:
-                measurement = appliance.find(locator).text
                 value = float(measurement)
                 value = '{:.1f}'.format(round(value, 1))
                 return value
