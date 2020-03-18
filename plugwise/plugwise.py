@@ -553,8 +553,7 @@ class Plugwise:
 
     def set_preset(self, location_id, loc_type, preset):
         """Sets the preset, helper function."""
-        locations_root = self._locations()
-        current_location = locations_root.find("location[@id='" + location_id + "']")
+        current_location = self._locations.find("location[@id='" + location_id + "']")
         location_name = current_location.find('name').text
         location_type = current_location.find('type').text
 
