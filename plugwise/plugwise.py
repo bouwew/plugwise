@@ -82,7 +82,7 @@ class Plugwise:
         )
         if xml.status_code != requests.codes.ok:
             raise ConnectionError("Could not get the domain objects.")
-        self.__domain_objects = Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
+        self._domain_objects = Etree.fromstring(self.escape_illegal_xml_characters(xml.text))
         
     @staticmethod
     def escape_illegal_xml_characters(root):
