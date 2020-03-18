@@ -449,8 +449,7 @@ class Plugwise:
                 last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
                 return last_modified
 
-    @staticmethod
-    def get_rule_id_and_zone_location_by_template_tag_with_id(rule_name, id):
+    def get_rule_id_and_zone_location_by_template_tag_with_id(self, rule_name, id):
         """Obtains the rule_id based on the given template_tag and location_id."""
         schema_ids = {}
         rules = self._domain_objects.findall('.//rule')
