@@ -410,7 +410,7 @@ class Plugwise:
         presets = {}
         for key,val in rule_ids.items():
             if val == id:
-                presets = self.get_preset_dictionary(root, key)
+                presets = self.get_preset_dictionary(key)
         return presets
 
     def get_schema_names_from_id(self, id):
@@ -423,9 +423,9 @@ class Plugwise:
         if rule_ids:
             for key,val in rule_ids.items():
                 if val == id:
-                    name = root.find("rule[@id='" + key + "']/name").text
+                    name = self._domain_objects.find("rule[@id='" + key + "']/name").text
                     active = False
-                    if root.find("rule[@id='" + key + "']/active").text == 'true':
+                    if self._domain_objects.find("rule[@id='" + key + "']/active").text == 'true':
                         active = True
                     schemas[name] = active
         if schemas != {}:
@@ -492,7 +492,7 @@ class Plugwise:
         """Obtains the outdoor_temperature from the thermostat."""
         locator = (".//logs/point_log[type='outdoor_temperature']/period/measurement")
         if self._domain_objects.find(locator) is not None:
-            measurement = root.find(locator).text
+            measurement = self._domain_objects.find(locator).text
             value = float(measurement)
             value = '{:.1f}'.format(round(value, 1))
             return value
@@ -501,7 +501,7 @@ class Plugwise:
         """Obtain the illuminance value from the thermostat."""
         locator = (".//logs/point_log[type='illuminance']/period/measurement")
         if self._domain_objects.find(locator) is not None:
-            measurement = root.find(locator).text
+            measurement = self._domain_objects.find(locator).text
             value = float(measurement)
             value = '{:.1f}'.format(round(value, 1))
             return value
