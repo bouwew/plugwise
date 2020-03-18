@@ -387,13 +387,13 @@ class Plugwise:
         if appl_data != {}:
             return appl_data
 
-    def get_preset_from_id(self, id):
+    def get_preset_from_id(self,dev_id):
         """Obtains the active preset based on the location_id - from DOMAIN_OBJECTS."""
         for location in self._domain_objects:
             location_id = location.attrib['id']
             if location.find('preset') is not None:
                 preset = location.find('preset').text
-                if location_id == id:
+                if location_id ==dev_id:
                     return preset
     
     def get_presets_from_id(self, dev_id):
@@ -409,20 +409,20 @@ class Plugwise:
 
         presets = {}
         for key,val in rule_ids.items():
-            if val == id:
+            if val == dev_id:
                 presets = self.get_preset_dictionary(key)
         return presets
 
-    def get_schema_names_from_id(self, id):
+    def get_schema_names_from_id(self, dev_id):
         """Obtains the available schemas or schedules based on the location_id."""
         rule_ids = {}
         locator = 'zone_preset_based_on_time_and_presence_with_override'
-        rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(locator, id)
+        rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(locator, dev_id)
         schemas = {}
         l_schemas = {}
         if rule_ids:
             for key,val in rule_ids.items():
-                if val == id:
+                if val == dev_id:
                     name = self._domain_objects.find("rule[@id='" + key + "']/name").text
                     active = False
                     if self._domain_objects.find("rule[@id='" + key + "']/active").text == 'true':
@@ -431,17 +431,17 @@ class Plugwise:
         if schemas != {}:
             return schemas
             
-    def get_last_active_schema_name_from_id(self, id):
+    def get_last_active_schema_name_from_id(self, dev_id):
         """Determine the last active schema."""
         epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
         date_format = "%Y-%m-%dT%H:%M:%S.%f%z"
         rule_ids = {}
         locator = 'zone_preset_based_on_time_and_presence_with_override'
-        rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(locator, id)
+        rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(locator, dev_id)
         schemas = {}
         if rule_ids:
             for key,val in rule_ids.items():
-                if val == id:
+                if val == dev_id:
                     schema_name = self._domain_objects.find("rule[@id='" + key + "']/name").text
                     schema_date = self._domain_objects.find("rule[@id='" + key + "']/modified_date").text
                     schema_time = parse(schema_date)
@@ -449,7 +449,7 @@ class Plugwise:
                 last_modified = sorted(schemas.items(), key=lambda kv: kv[1])[-1][0]
                 return last_modified
 
-    def get_rule_id_and_zone_location_by_template_tag_with_id(self, rule_name, id):
+    def get_rule_id_and_zone_location_by_template_tag_with_id(self, rule_name, dev_id):
         """Obtains the rule_id based on the given template_tag and location_id."""
         schema_ids = {}
         rules = self._domain_objects.findall('.//rule')
@@ -463,12 +463,12 @@ class Plugwise:
                 for elem in rule.iter('location'):
                     if elem.attrib is not None:
                         location_id = elem.attrib['id']
-                        if location_id == id:
+                        if location_id == dev_id:
                             schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
 
-    def get_rule_id_and_zone_location_by_name_with_id(self, rule_name, id):
+    def get_rule_id_and_zone_location_by_name_with_id(self, rule_name, dev_id):
         """Obtains the rule_id and location_id based on the given name and location_id."""
         schema_ids = {}
         rules = self._domain_objects.findall('.//rule')
@@ -482,7 +482,7 @@ class Plugwise:
                 for elem in rule.iter('location'):
                     if elem.attrib is not None:
                         location_id = elem.attrib['id']
-                        if location_id == id:
+                        if location_id == dev_id:
                             schema_ids[rule_id] = location_id
         if schema_ids != {}:
             return schema_ids
