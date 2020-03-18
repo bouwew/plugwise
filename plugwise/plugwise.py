@@ -253,7 +253,7 @@ class Plugwise:
                 
         return location_list
 
-    def get_appliance_from_loc_id(self, id):
+    def get_appliance_from_loc_id(self, dev_id):
         """Obtains the appliance-data connected to a location - from APPLIANCES."""
         appliances = self._appliances.findall('.//appliance')
         appl_list = []
