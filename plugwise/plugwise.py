@@ -2,7 +2,7 @@
 Plugwise library for use with Home Assistant Core.
 """
 import requests
-import xml.etree.cElementTree as Etree
+import lxml as Etree
 
 # Time related
 import datetime
