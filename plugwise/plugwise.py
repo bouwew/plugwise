@@ -224,13 +224,13 @@ class Plugwise:
                 location_type = 'plug'
             elif location.find('.//actuator_functionalities/thermostat_functionality'):
                 location_type = 'thermostat'
-            else:
-                power_locator='.//logs/point_log[type="electricity_consumed"]'
-                if (appliance is None) and location.find(power_locator):
-                    p1_ec_log = location.find(power_locator)
-                    meter_locator='.//electricity_point_meter'
-                    if p1_ec_log.find(meter_locator).get('id'):
-                        location_type = 'power'
+            #else:
+            #    power_locator='.//logs/point_log[type="electricity_consumed"]'
+            #    if (appliance is None) and location.find(power_locator):
+            #        p1_ec_log = location.find(power_locator)
+            #        meter_locator='.//electricity_point_meter'
+            #        if p1_ec_log.find(meter_locator).get('id'):
+            #            location_type = 'power'
 
             if location_name != "Home":
                 if location_type == 'plug':
@@ -243,10 +243,10 @@ class Plugwise:
                     location_dict['id'] = location_id
                     location_dict['type'] = location_type
             # P1
-            elif location_type == 'power':
-                    location_dict['name'] = location_name
-                    location_dict['id'] = location_id
-                    location_dict['type'] = location_type
+            #elif location_type == 'power':
+            #        location_dict['name'] = location_name
+            #        location_dict['id'] = location_id
+            #        location_dict['type'] = location_type
                     
             if location_dict != {}:
                 location_list.append(location_dict)
