@@ -2,7 +2,7 @@
 Plugwise library for use with Home Assistant Core.
 """
 import requests
-import lxml as Etree
+from lxml import Etree
 
 # Time related
 import datetime
@@ -49,7 +49,7 @@ class Plugwise:
         )
         if xml.status_code != requests.codes.ok:
             raise ConnectionError("Could not get the appliances.")
-        self._appliances = Etree.XML(self.escape_illegal_xml_characters(xml.text))
+        self._appliances = Etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
 
     def get_locations(self):
         """Collects the locations XML-data."""
@@ -60,7 +60,7 @@ class Plugwise:
         )
         if xml.status_code != requests.codes.ok:
             raise ConnectionError("Could not get the appliances.")
-        self._locations = Etree.XML(self.escape_illegal_xml_characters(xml.text))
+        self._locations = Etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
 
     def get_direct_objects(self):
         """Collects the direct_objects XML-data."""
@@ -71,7 +71,7 @@ class Plugwise:
         )
         if xml.status_code != requests.codes.ok:
             raise ConnectionEror("Could not get the direct objects.")
-        self._direct_objects = Etree.XML(self.escape_illegal_xml_characters(xml.text))
+        self._direct_objects = Etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
     
     def get_domain_objects(self):
         """Collects the domain_objects XML-data."""
@@ -82,7 +82,7 @@ class Plugwise:
         )
         if xml.status_code != requests.codes.ok:
             raise ConnectionError("Could not get the domain objects.")
-        self._domain_objects = Etree.XML(self.escape_illegal_xml_characters(xml.text))
+        self._domain_objects = Etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
         
     @staticmethod
     def escape_illegal_xml_characters(root):
