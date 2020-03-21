@@ -98,21 +98,17 @@ class Plugwise:
     
     def get_devices(self):
         """Provides the devices-names and application- or location-ids."""
-        appl_dict = self.get_appliance_dictionary()
-        loc_list = self.get_location_list()
+        appl_list = self.get_appliance_list()
+        loc_list = self.get_location_list(appl_list)
                         
         keys = ['name','id', 'type']
         thermostats = []
-        for appl_id,type in appl_dict.items():
+        for item in appl_list:
             thermostat = []
-            if ('heater_central' in type):
-               # ('zone_thermostat' not in type)
-               #   and ('thermostatic_radiator_valve' not in type)
-               #   and ('gateway' not in type)
-               #   and ('thermostat' not in type)):
+            if item['type'] == 'heater_central':
                 thermostat.append('Controlled Device')
-                thermostat.append(appl_id)
-                thermostat.append(type)
+                thermostat.append(item['id'])
+                thermostat.append(item['loc_type'])
                 if thermostat != []:
                     thermostats.append(thermostat)
         
@@ -182,75 +178,69 @@ class Plugwise:
 
         return device_data
 
-    def get_appliance_dictionary(self):
+    def get_appliance_list(self):
         """Obtains the existing appliance types and ids - from APPLIANCES."""
-        appliance_dictionary = {}
+        appliance_list = []
         for appliance in self._appliances:
-            appliance_name = appliance.find('name').text
-            if "Gateway" not in appliance_name:
-                appliance_id = appliance.attrib['id']
-                appliance_type = appliance.find('type').text
-                if appliance_type == 'heater_central':
-                    appliance_dictionary[appliance_id] = appliance_type
+            appliance_dictionary = {}
+            appliance_dictionary['id'] = appliance.attrib['id']
+            appliance_dictionary['name'] = appliance.find('name').text
+            appliance_dictionary['type'] = appliance.find('type').text
+            appliance_loc = appliance.find('.//location')
+            if appliance_loc is not None:
+                appliance_dictionary['location'] = appliance_loc.attrib['id']
+            if appliance.find('.//actuator_functionalities/relay_functionality'):
+                appliance_dictionary['loc_type'] = 'plug'
+            if appliance.find('.//actuator_functionalities/thermostat_functionality'):
+                appliance_dictionary['loc_type'] = 'thermostat'
+            appliance_list.append(appliance_dictionary)
 
-        return appliance_dictionary
+        return appliance_list
     
-    def get_location_list(self):
+    def get_location_list(self, list):
         """Obtains the existing locations and connected applicance_id's - from LOCATIONS."""
         location_list = []
+                
         for location in self._locations:
-            location_dict = {}
-            location_name = location.find('name').text
+            global last_dict
+            last_dict = {}
+            location_name = location.find('name').text.lower().replace(" ", "_")
             location_id = location.attrib['id']
             appliance_id = None
             location_type =  None
-            #for elem in location.iter('appliance'):
-            #    if elem.attrib is not None:
-            #        appliance_id = elem.attrib['id']
-            #for elem in location.iter('relay_functionality'):
-            #    if elem.attrib is not None:
-            #        location_type = 'plug'
-            #for elem in location.iter('thermostat_functionality'):
-            #    if elem.attrib is not None:
-            #        location_type = 'thermostat'
-            
-            # Find appliances (if any)
-            appliance = location.find('.//appliances/appliance')
-            if appliance is not None:
-                appliance_id = appliance.attrib['id']
+            appliances = location.find('.//appliances')
+            for appliance in appliances:
+                location_dict = {}
+                if appliance is not None:
+                    appliance_id = appliance.attrib['id']
+                    for item in list:
+                        if item['id'] == appliance_id:
+                            appliance_name = item['name'].lower().replace(" ", "_")
+                            if item['loc_type'] == 'thermostat':
+                                location_type = 'thermostat'
+                            if item['loc_type'] == 'plug':
+                                location_type = 'plug'              
 
-            # Determine location_type from functionality
-            if location.find('.//actuator_functionalities/relay_functionality'):
-                location_type = 'plug'
-            elif location.find('.//actuator_functionalities/thermostat_functionality'):
-                location_type = 'thermostat'
-            #else:
-            #    power_locator='.//logs/point_log[type="electricity_consumed"]'
-            #    if (appliance is None) and location.find(power_locator):
-            #        p1_ec_log = location.find(power_locator)
-            #        meter_locator='.//electricity_point_meter'
-            #        if p1_ec_log.find(meter_locator).get('id'):
-            #            location_type = 'power'
+                if location_name != "Home":
+                    if location_type == 'plug':
+                        location_dict['name'] = '{}_{}'.format(location_name, appliance_name)
+                        location_dict['id'] = appliance_id
+                        location_dict['type'] = location_type
 
-            if location_name != "Home":
-                if location_type == 'plug':
-                    location_dict['name'] = location_name
-                    location_dict['id'] = appliance_id
-                    location_dict['type'] = location_type
+                    if location_type == 'thermostat':
+                        location_dict['name'] = location_name
+                        location_dict['id'] = location_id
+                        location_dict['type'] = location_type
 
-                if location_type == 'thermostat':
-                    location_dict['name'] = location_name
-                    location_dict['id'] = location_id
-                    location_dict['type'] = location_type
-            # P1
-            #elif location_type == 'power':
-            #        location_dict['name'] = location_name
-            #        location_dict['id'] = location_id
-            #        location_dict['type'] = location_type
-                    
-            if location_dict != {}:
-                location_list.append(location_dict)
+                if location_dict != {}:
+                    if last_dict == {}:
+                        location_list.append(location_dict)
+                    else:
+                        if location_dict['id'] != last_dict['id']:
+                            location_list.append(location_dict)
                 
+                last_dict = location_dict
+                                          
         return location_list
 
     def get_appliance_from_loc_id(self, dev_id):
