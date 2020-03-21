@@ -187,13 +187,13 @@ class Plugwise:
             appliance_dictionary['name'] = appliance.find('name').text
             appliance_dictionary['type'] = appliance.find('type').text
             appliance_loc = appliance.find('.//location')
-            if appliance_loc is not None:
-                appliance_dictionary['location'] = appliance_loc.attrib['id']
             if appliance.find('.//actuator_functionalities/relay_functionality'):
                 appliance_dictionary['loc_type'] = 'plug'
             if appliance.find('.//actuator_functionalities/thermostat_functionality'):
                 appliance_dictionary['loc_type'] = 'thermostat'
-            appliance_list.append(appliance_dictionary)
+
+            if "Gateway" not in appliance_dictionary['name']:
+                appliance_list.append(appliance_dictionary)
 
         return appliance_list
     
