@@ -108,7 +108,7 @@ class Plugwise:
             if item['type'] == 'heater_central':
                 thermostat.append('Controlled Device')
                 thermostat.append(item['id'])
-                thermostat.append(item['loc_type'])
+                thermostat.append(item['type'])
                 if thermostat != []:
                     thermostats.append(thermostat)
         
