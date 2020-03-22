@@ -1,102 +1,182 @@
-"""
-Plugwise library for use with Home Assistant Core.
-"""
-import requests
-from lxml import etree
+"""Plugwise Home Assistant module."""
 
+import asyncio
+import logging
+from lxml import etree
 # Time related
-import datetime
+import datetime as dt
 import pytz
 from dateutil.parser import parse
-
 # For XML corrections
 import re
 
-PING = "/ping"
+import aiohttp
+import async_timeout
+
+APPLIANCES = "/core/appliances"
 DIRECT_OBJECTS = "/core/direct_objects"
 DOMAIN_OBJECTS = "/core/domain_objects"
 LOCATIONS = "/core/locations"
-APPLIANCES = "/core/appliances"
+MODULES = "/core/modules"
 RULES = "/core/rules"
+
+DEFAULT_TIMEOUT = 20
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Plugwise:
     """Define the Plugwise object."""
+    # pylint: disable=too-many-instance-attributes, too-many-public-methods
 
-    def __init__(self, username, password, host, port):
-        """Constructor for this class"""
-        self._username = username
-        self._password = password
-        self._endpoint = 'http://' + host + ':' + str(port)
+    def __init__(self, host, password, username='smile', port=80,
+                 timeout=DEFAULT_TIMEOUT, websession=None):
+        """Set the constructor for this class."""
 
-    def ping_gateway(self):
-        """Ping the gateway (Adam/Smile) to see if it's online"""
-        xml = requests.get(
-              self._endpoint + PING,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != 404:
-            raise ConnectionError("Could not connect to the gateway.")
+        if websession is None:
+            async def _create_session():
+                return aiohttp.ClientSession()
+
+            loop = asyncio.get_event_loop()
+            self.websession = loop.run_until_complete(_create_session())
+        else:
+            self.websession = websession
+
+        self._auth = aiohttp.BasicAuth(username, password=password)
+
+        self._timeout = timeout
+        self._endpoint = "http://" + host + ":" + str(port)
+        self._appliances = None
+        self._direct_objects = None
+        self._domain_objects = None
+        self._locations = None
+        self._modules = None
+        self._rules = None
+#        self._platforms = ["climate","water_heater","sensor"]
+
+    async def connect(self, retry=2):
+        """Connect to Plugwise device."""
+        # pylint: disable=too-many-return-statements
+        url = self._endpoint + MODULES
+        try:
+            with async_timeout.timeout(self._timeout):
+                resp = await self.websession.get(url, auth=self._auth)
+        except (asyncio.TimeoutError, aiohttp.ClientError):
+            if retry < 1:
+                _LOGGER.error("Error connecting to Plugwise", exc_info=True)
+                return False
+            return await self.connect(retry - 1)
+
+        result = await resp.text()
+
+        if '<vendor_name>Plugwise</vendor_name>' not in result:
+            _LOGGER.error('Connected but expected text not returned, \
+                          we got %s', result)
+            return False
+
+        # Adam or Anna (non-legacy)
+        if "<vendor_model>ThermoExtension</vendor_model>" in result:
+            self._smile_type = 'thermostat'
+            self._smile_subtype = 'non_legacy'
+        # Adam and Anna case?
+        elif "<vendor_model>Adam</vendor_model>" in result:
+            self._smile_type = 'thermostat'
+            self._smile_subtype = 'non_legacy'
+
+        if self._smile_type is None:
+            _LOGGER.error('Unable to determine Adam/Anna/P1 - assuming thermostat')
+            self._smile_type = 'thermostat'
+            self._smile_subtype = 'unknown'
+
+        # Update all endpoints on first connect
+        await self.full_update_device()
+
         return True
 
-    def get_appliances(self):
-        """Collects the appliances XML-data."""
-        xml = requests.get(
-              self._endpoint + APPLIANCES,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the appliances.")
-        self._appliances = etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
+    async def close_connection(self):
+        """Close the Plugwise connection."""
+        await self.websession.close()
 
-    def get_locations(self):
-        """Collects the locations XML-data."""
-        xml = requests.get(
-              self._endpoint + LOCATIONS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the appliances.")
-        self._locations = etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
+    async def request(self, command, retry=3, method='get', data={},
+                      headers={'Content-type': 'text/xml'}):
+        """Request data."""
+        # pylint: disable=too-many-return-statements
 
-    def get_direct_objects(self):
-        """Collects the direct_objects XML-data."""
-        xml = requests.get(
-              self._endpoint + DIRECT_OBJECTS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionEror("Could not get the direct objects.")
-        self._direct_objects = etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
-    
-    def get_domain_objects(self):
-        """Collects the domain_objects XML-data."""
-        xml = requests.get(
-              self._endpoint + DOMAIN_OBJECTS,
-              auth=(self._username, self._password),
-              timeout=10,
-        )
-        if xml.status_code != requests.codes.ok:
-            raise ConnectionError("Could not get the domain objects.")
-        self._domain_objects = etree.XML(self.escape_illegal_xml_characters(xml.text).encode())
-        
-    @staticmethod
-    def escape_illegal_xml_characters(root):
-        """Replaces illegal &-characters."""
-        return re.sub(r'&([^a-zA-Z#])',r'&amp;\1',root)
+        url = self._endpoint + command
+        # _LOGGER.debug("Plugwise command: %s",command)
+        # _LOGGER.debug("Plugwise command type: %s",method)
+        # _LOGGER.debug("Plugwise command data: %s",data)
 
-    def full_update_device(self):
+        try:
+            with async_timeout.timeout(self._timeout):
+                if method == 'get':
+                    resp = await self.websession.get(url, auth=self._auth)
+                if method == 'put':
+                    # _LOGGER.debug("Sending: command/url %s with data %s
+                    #               using headers %s", command, data, headers)
+                    resp = await self.websession.put(url, data=data,
+                                                     headers=headers,
+                                                     auth=self._auth)
+        except asyncio.TimeoutError:
+            if retry < 1:
+                _LOGGER.error("Timed out sending command to Plugwise: %s",
+                              command)
+                return None
+            return await self.request(command, retry - 1)
+        except aiohttp.ClientError:
+            _LOGGER.error("Error sending command to Plugwise: %s", command,
+                          exc_info=True)
+            return None
+
+        result = await resp.text()
+
+        # _LOGGER.debug(result)
+        _LOGGER.debug('Plugwise network traffic to %s- talking to Smile with \
+                      %s', self._endpoint, command)
+
+        if not result or 'error' in result:
+            return None
+
+        # Encode to ensure utf8 parsing
+        return etree.XML(self.escape_illegal_xml_characters(result).encode())
+
+    # Appliances
+    async def update_appliances(self):
+        """Request data."""
+        new_data = await self.request(APPLIANCES)
+        if new_data is not None:
+            self._appliances = new_data
+
+    # Direct objects
+    async def update_direct_objects(self):
+        """Request data."""
+        new_data = await self.request(DIRECT_OBJECTS)
+        if new_data is not None:
+            self._direct_objects = new_data
+
+    # Domain objects
+    async def update_domain_objects(self):
+        """Request data."""
+        new_data = await self.request(DOMAIN_OBJECTS)
+        if new_data is not None:
+            self._domain_objects = new_data
+
+    # Locations
+    async def update_locations(self):
+        """Request data."""
+        new_data = await self.request(LOCATIONS)
+        if new_data is not None:
+            self._locations = new_data
+
+    async def full_update_device(self):
         """Update device."""
-        self.get_appliances()
-        self.get_domain_objects()
-        self.get_direct_objects()
-        self.get_locations()
-    
-    def get_devices(self):
+        await self.update_appliances()
+        await self.update_domain_objects()
+        await self.update_direct_objects()
+        await self.update_locations()
+        return True
+
+    async def get_devices(self):
         """Provides the devices-names and application- or location-ids."""
         appl_list = self.get_appliance_list()
         loc_list = self.get_location_list(appl_list)
@@ -122,7 +202,7 @@ class Plugwise:
 
         data = [{k:v for k,v in zip(keys, n)} for n in thermostats]
         return data
-                    
+
     def get_device_data(self, dev_id, ctrl_id, plug_id):
         """Provides the device-data, based on location_id, from APPLIANCES."""
         outdoor_temp = self.get_outdoor_temperature()
@@ -177,6 +257,19 @@ class Plugwise:
                     device_data.update( {'dhw_state': controller_data['dhw_state']} )
 
         return device_data
+
+    def get_appliance_dictionary(self):
+        """Obtains the existing appliance types and ids - from APPLIANCES."""
+        appliance_dictionary = {}
+        for appliance in self._appliances:
+            appliance_name = appliance.find('name').text
+            if "Gateway" not in appliance_name:
+                appliance_id = appliance.attrib['id']
+                appliance_type = appliance.find('type').text
+                if appliance_type == 'heater_central':
+                    appliance_dictionary[appliance_id] = appliance_type
+
+        return appliance_dictionary
 
     def get_appliance_list(self):
         """Obtains the existing appliance types and ids - from APPLIANCES."""
@@ -288,6 +381,14 @@ class Plugwise:
                                 appl_list.append(appl_dict.copy())
 
         rev_list = sorted(appl_list, key=lambda k: k['type'], reverse=True)
+        trv = 1
+        if rev_list[0]['type'] == 'zone_thermostat':
+            for item in rev_list:
+                if item['type'] == 'thermostatic_radiator_valve':
+                    rev_list[0].update( {'trv_{}_battery'.format(trv): item['battery']} )
+                    rev_list[0].update( {'trv_{}_current_temp'.format(trv): item['current_temp']} )
+                    trv +=1
+
         if rev_list != []:
             return rev_list[0]
 
@@ -377,15 +478,16 @@ class Plugwise:
         if appl_data != {}:
             return appl_data
 
-    def get_preset_from_id(self,dev_id):
-        """Obtains the active preset based on the location_id - from DOMAIN_OBJECTS."""
+    def get_preset_from_id(self, dev_id):
+        """Obtains the active preset based on the location_id -
+           from DOMAIN_OBJECTS."""
         for location in self._domain_objects:
             location_id = location.attrib['id']
             if location.find('preset') is not None:
                 preset = location.find('preset').text
-                if location_id ==dev_id:
+                if location_id == dev_id:
                     return preset
-    
+
     def get_presets_from_id(self, dev_id):
         """Gets the presets from the thermostat based on location_id."""
         rule_ids = {}
@@ -398,20 +500,22 @@ class Plugwise:
                 return None
 
         presets = {}
-        for key,val in rule_ids.items():
+        for key, val in rule_ids.items():
             if val == dev_id:
                 presets = self.get_preset_dictionary(key)
         return presets
 
     def get_schema_names_from_id(self, dev_id):
-        """Obtains the available schemas or schedules based on the location_id."""
+        """Obtains the available schemas or schedules based on the
+           location_id."""
         rule_ids = {}
         locator = 'zone_preset_based_on_time_and_presence_with_override'
+        # _LOGGER.debug("Plugwise locator and id: %s -> %s",locator,dev_id)
         rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(locator, dev_id)
         schemas = {}
         l_schemas = {}
         if rule_ids:
-            for key,val in rule_ids.items():
+            for key, val in rule_ids.items():
                 if val == dev_id:
                     name = self._domain_objects.find("rule[@id='" + key + "']/name").text
                     active = False
@@ -420,17 +524,17 @@ class Plugwise:
                     schemas[name] = active
         if schemas != {}:
             return schemas
-            
+
     def get_last_active_schema_name_from_id(self, dev_id):
         """Determine the last active schema."""
-        epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
-        date_format = "%Y-%m-%dT%H:%M:%S.%f%z"
+        epoch = dt.datetime(1970, 1, 1, tzinfo=pytz.utc)
         rule_ids = {}
         locator = 'zone_preset_based_on_time_and_presence_with_override'
+        # _LOGGER.debug("Plugwise locator and id: %s -> %s",locator,dev_id)
         rule_ids = self.get_rule_id_and_zone_location_by_template_tag_with_id(locator, dev_id)
         schemas = {}
         if rule_ids:
-            for key,val in rule_ids.items():
+            for key, val in rule_ids.items():
                 if val == dev_id:
                     schema_name = self._domain_objects.find("rule[@id='" + key + "']/name").text
                     schema_date = self._domain_objects.find("rule[@id='" + key + "']/modified_date").text
@@ -440,7 +544,9 @@ class Plugwise:
                 return last_modified
 
     def get_rule_id_and_zone_location_by_template_tag_with_id(self, rule_name, dev_id):
-        """Obtains the rule_id based on the given template_tag and location_id."""
+        """Obtains the rule_id based on the given template_tag and
+           location_id."""
+        # _LOGGER.debug("Plugwise rule and id: %s -> %s",rule_name,dev_id)
         schema_ids = {}
         rules = self._domain_objects.findall('.//rule')
         for rule in rules:
@@ -474,6 +580,7 @@ class Plugwise:
                         location_id = elem.attrib['id']
                         if location_id == dev_id:
                             schema_ids[rule_id] = location_id
+
         if schema_ids != {}:
             return schema_ids
 
@@ -483,7 +590,7 @@ class Plugwise:
         if self._domain_objects.find(locator) is not None:
             measurement = self._domain_objects.find(locator).text
             value = float(measurement)
-            value = '{:.1f}'.format(round(value, 1))
+            value = float('{:.1f}'.format(round(value, 1)))
             return value
 
     def get_illuminance(self):
@@ -492,7 +599,7 @@ class Plugwise:
         if self._domain_objects.find(locator) is not None:
             measurement = self._domain_objects.find(locator).text
             value = float(measurement)
-            value = '{:.1f}'.format(round(value, 1))
+            value = float('{:.1f}'.format(round(value, 1)))
             return value
 
     def get_preset_dictionary(self, rule_id):
@@ -510,12 +617,15 @@ class Plugwise:
                 preset_dictionary[directive.attrib["preset"]] = [float(preset["heating_setpoint"]), float(preset["cooling_setpoint"])]
         if preset_dictionary != {}:
             return preset_dictionary
-            
-    def set_schedule_state(self, loc_id, name, state):
-        """Sets the schedule, helper-function."""
+
+    async def set_schedule_state(self, loc_id, name, state):
+        """Sets the schedule, with the given name, connected to a location, to true or false - DOMAIN_OBJECTS."""
+        # _LOGGER.debug("Changing schedule state to: %s", state)
         schema_rule_ids = {}
         schema_rule_ids = self.get_rule_id_and_zone_location_by_name_with_id(str(name), loc_id)
-        for schema_rule_id,location_id in schema_rule_ids.items():
+        if not schema_rule_ids:
+            return False
+        for schema_rule_id, location_id in schema_rule_ids.items():
             if location_id == loc_id:
                 templates = self._domain_objects.findall(".//*[@id='{}']/template".format(schema_rule_id))
                 template_id = None
@@ -529,92 +639,79 @@ class Plugwise:
                        '<template id="{}" /><active>{}</active></rule>' \
                        '</rules>'.format(schema_rule_id, name, template_id, state)
 
-                xml = requests.put(
-                      self._endpoint + uri,
-                      auth=(self._username, self._password),
-                      data=data,
-                      headers={'Content-Type': 'text/xml'},
-                      timeout=10
-                )
+                await self.request(uri, method='put', data=data)
 
-                if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-                    CouldNotSetTemperatureException("Could not set the schema to {}.".format(state) + xml.text)
-                return '{} {}'.format(xml.text, data)
+                # All get_schema related items check domain_objects so update that
+                await asyncio.sleep(1)
+                await self.update_domain_objects()
 
-    def set_preset(self, location_id, loc_type, preset):
-        """Sets the preset, helper function."""
-        current_location = self._locations.find("location[@id='" + location_id + "']")
+        return True
+
+    async def set_preset(self, loc_id, preset):
+        """Sets the given location-preset on the relevant thermostat -
+           from LOCATIONS."""
+        # _LOGGER.debug("Changing preset for %s - %s to: %s", loc_id, loc_type, preset)
+        current_location = self._locations.find("location[@id='" + loc_id + "']")
         location_name = current_location.find('name').text
         location_type = current_location.find('type').text
 
-        xml = requests.put(
-                self._endpoint
-                + LOCATIONS
-                + ";id="
-                + location_id,
-                auth=(self._username, self._password),
-                data="<locations>"
-                + '<location id="'
-                + location_id
-                + '">'
-                + "<name>"
-                + location_name
-                + "</name>"
-                + "<type>"
-                + location_type
-                + "</type>"
-                + "<preset>"
-                + preset
-                + "</preset>"
-                + "</location>"
-                + "</locations>",
-                headers={"Content-Type": "text/xml"},
-                timeout=10,
-            )
-        if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-            raise CouldNotSetPresetException("Could not set the given preset: " + xml.text)
-        return xml.text
+        uri = "{};id={}".format(LOCATIONS, loc_id)
 
-    def set_temperature(self, loc_id, loc_type, temperature):
-        """Sends a temperature-set request, helper function."""
-        uri = self.__get_temperature_uri(loc_id, loc_type)
+        data = "<locations>" \
+            + '<location id="' \
+            + loc_id \
+            + '">' \
+            + "<name>" \
+            + location_name \
+            + "</name>" \
+            + "<type>" \
+            + location_type \
+            + "</type>" \
+            + "<preset>" \
+            + preset \
+            + "</preset>" \
+            + "</location>" \
+            + "</locations>"
+
+        await self.request(uri, method='put', data=data)
+
+        # All get_preset related items check domain_objects so update that
+        await asyncio.sleep(1)
+        await self.update_domain_objects()
+
+        return True
+
+    async def set_temperature(self, dev_id, temperature):
+        """Sends a temperature-set request to the relevant thermostat,
+           connected to a location."""
+        uri = self.__get_temperature_uri(dev_id)
         temperature = str(temperature)
+        data = "<thermostat_functionality><setpoint>" \
+               + temperature \
+               + "</setpoint></thermostat_functionality>"
 
         if uri is not None:
-            xml = requests.put(
-                self._endpoint + uri,
-                auth=(self._username, self._password),
-                data="<thermostat_functionality><setpoint>" + temperature + "</setpoint></thermostat_functionality>",
-                headers={"Content-Type": "text/xml"},
-                timeout=10,
-            )
+            await self.request(uri, method='put', data=data)
 
-            if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-                CouldNotSetTemperatureException("Could not set the temperature." + xml.text)
-            return xml.text
         else:
             CouldNotSetTemperatureException("Could not obtain the temperature_uri.")
+            return False
 
-    def __get_temperature_uri(self, loc_id, loc_type):
-        """Determine the location-set_temperature uri - from DOMAIN_OBJECTS."""
-        locator = (
-            "location[@id='"
-            + loc_id
-            + "']/actuator_functionalities/thermostat_functionality"
-        )
-        thermostat_functionality_id = self._domain_objects.find(locator).attrib['id']
-        
-        temperature_uri = (
-            LOCATIONS
-            + ";id="
-            + loc_id
-            + "/thermostat;id="
-            + thermostat_functionality_id
-        )
-        
+        await asyncio.sleep(1)
+        await self.update_appliances()
+
+        return True
+
+    def __get_temperature_uri(self, dev_id):
+        """Determine the location-set_temperature uri - from LOCATIONS."""
+        locator = ("location[@id='{}']/actuator_functionalities/thermostat_functionality").format(dev_id)
+        thermostat_functionality_id = self._locations.find(locator).attrib['id']
+
+        temperature_uri = (LOCATIONS + ";id=" + dev_id + "/thermostat;id=" + thermostat_functionality_id)
+
         return temperature_uri
-        
-    def set_relay_state(self, appl_id, type, state):
+
+    async def set_relay_state(self, appl_id, type, state):
         """Switch the Plug to off/on."""
         locator = ("appliance[type='" + type + "']/actuator_functionalities/relay_functionality")
         relay_functionality_id = self._domain_objects.find(locator).attrib['id']
@@ -625,50 +722,22 @@ class Plugwise:
             + "/relay;id="
             + relay_functionality_id
         )
-
         state = str(state)
+        data = "<relay_functionality><state>{}</state></relay_functionality>".format(state)
 
         if uri is not None:
-            xml = requests.put(
-                self._endpoint + uri,
-                auth=(self._username, self._password),
-                data="<relay_functionality><state>" + state + "</state></relay_functionality>",
-                headers={"Content-Type": "text/xml"},
-                timeout=10,
-            )
+            await self.request(uri, method='put', data=data)
 
-            if xml.status_code != requests.codes.ok: # pylint: disable=no-member
-                print("Could not set the relay state." + xml.text)
-            return xml.text
         else:
-            CouldNotSetTemperatureException("Could not obtain the relay_uri.")
+            CouldNotSetTemperatureException("Could not obtain the temperature_uri.")
+            return False
 
+        await asyncio.sleep(1)
+        await self.update_appliances()
 
-class PlugwiseException(Exception):
-    """Define Exceptions."""
+        return True
 
-    def __init__(self, arg1, arg2=None):
-        """Set the base exception for interaction with the Plugwise gateway"""
-        self.arg1 = arg1
-        self.arg2 = arg2
-        super(PlugwiseException, self).__init__(arg1)
-
-
-class RuleIdNotFoundException(PlugwiseException):
-    """
-    Raise an exception for when the rule_id is not found in the direct objects
-    """
-
-    pass
-
-
-class CouldNotSetPresetException(PlugwiseException):
-    """Raise an exception for when the preset could  not be set"""
-
-    pass
-    
-    
-class CouldNotSetTemperatureException(PlugwiseException):
-    """Raise an exception for when the temperature could not be set."""
-
-    pass
+    @staticmethod
+    def escape_illegal_xml_characters(xmldata):
+        """Replace illegal &-characters."""
+        return re.sub(r"&([^a-zA-Z#])", r"&amp;\1", xmldata)
