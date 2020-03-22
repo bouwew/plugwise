@@ -288,6 +288,14 @@ class Plugwise:
                                 appl_list.append(appl_dict.copy())
 
         rev_list = sorted(appl_list, key=lambda k: k['type'], reverse=True)
+        trv = 1
+        if rev_list[0]['type'] == 'zone_thermostat':
+            for item in rev_list:
+                if item['type'] == 'thermostatic_radiator_valve':
+                    rev_list[0].update( {'trv_{}_battery'.format(trv): item['battery']} )
+                    rev_list[0].update( {'trv_{}_current_temp'.format(trv): item['current_temp']} )
+                    trv +=1
+
         if rev_list != []:
             return rev_list[0]
 
