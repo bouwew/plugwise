@@ -642,8 +642,8 @@ class Plugwise:
                 await self.request(uri, method='put', data=data)
 
                 # All get_schema related items check domain_objects so update that
-                await asyncio.sleep(1)
-                await self.update_domain_objects()
+                #await asyncio.sleep(1)
+                #await self.update_domain_objects()
 
         return True
 
@@ -676,8 +676,8 @@ class Plugwise:
         await self.request(uri, method='put', data=data)
 
         # All get_preset related items check domain_objects so update that
-        await asyncio.sleep(1)
-        await self.update_domain_objects()
+        #await asyncio.sleep(1)
+        #await self.update_domain_objects()
 
         return True
 
@@ -697,8 +697,8 @@ class Plugwise:
             CouldNotSetTemperatureException("Could not obtain the temperature_uri.")
             return False
 
-        await asyncio.sleep(1)
-        await self.update_appliances()
+        #await asyncio.sleep(1)
+        #await self.update_appliances()
 
         return True
 
@@ -732,8 +732,8 @@ class Plugwise:
             CouldNotSetTemperatureException("Could not obtain the temperature_uri.")
             return False
 
-        await asyncio.sleep(1)
-        await self.update_appliances()
+        #await asyncio.sleep(1)
+        #await self.update_appliances()
 
         return True
 
