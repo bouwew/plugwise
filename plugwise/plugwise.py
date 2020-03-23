@@ -203,7 +203,7 @@ class Plugwise:
         data = [{k:v for k,v in zip(keys, n)} for n in thermostats]
         return data
 
-    def get_device_data(self, dev_id, ctrl_id, plug_id):
+    async def get_device_data(self, dev_id, ctrl_id, plug_id):
         """Provides the device-data, based on location_id, from APPLIANCES."""
         outdoor_temp = self.get_outdoor_temperature()
  
