@@ -168,7 +168,7 @@ class Plugwise:
         if new_data is not None:
             self._locations = new_data
 
-    async def full_update_device(self):
+    async def async_update(self):
         """Update device."""
         await self.update_appliances()
         await self.update_domain_objects()
